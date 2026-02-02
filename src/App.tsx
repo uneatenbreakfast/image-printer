@@ -8,6 +8,8 @@ import QRCode from "qrcode"; // Import qrcode library
 
 const PRINT_ASPECT_RATIO_WIDTH = 600;
 const PRINT_ASPECT_RATIO_HEIGHT = 400;
+const PRINT_PORTRAIT_WIDTH = 400;
+const PRINT_PORTRAIT_HEIGHT = 600;
 
 interface TextElement {
   id: string;
@@ -70,7 +72,7 @@ interface Template {
 }
 
 function App() {
-  const [layoutMode, setLayoutMode] = useState<"current" | "2x3" | "4cards">(
+  const [layoutMode, setLayoutMode] = useState<"current" | "2x3" | "4cards" | "4cards-portrait">(
     "current",
   );
   const [activeEditor, setActiveEditor] = useState<
@@ -107,6 +109,20 @@ function App() {
       console.error("Failed to save templates to localStorage:", error);
     }
   }, [templates]);
+
+  // Update combined canvas dimensions when layout mode changes
+  React.useEffect(() => {
+    const canvas = combinedPrintCanvasRef.current;
+    if (canvas) {
+      if (layoutMode === "4cards-portrait") {
+        canvas.width = PRINT_PORTRAIT_WIDTH;
+        canvas.height = PRINT_PORTRAIT_HEIGHT;
+      } else {
+        canvas.width = PRINT_ASPECT_RATIO_WIDTH;
+        canvas.height = PRINT_ASPECT_RATIO_HEIGHT;
+      }
+    }
+  }, [layoutMode]);
 
   // Refs for all editor stages
   const editorStageRefs = useRef<
@@ -151,7 +167,7 @@ function App() {
             ? activeEditor
             : "top-left";
       } else {
-        // '4cards' layout
+        // '4cards' and '4cards-portrait' layouts
         editorKey = activeEditor;
       }
 
@@ -447,6 +463,17 @@ function App() {
           return placeholder;
         }
         return combinedCanvas;
+      } else if (layoutMode === "4cards-portrait") {
+        const combinedCanvas = combinedPrintCanvasRef.current;
+        if (!combinedCanvas) {
+          console.error("Combined canvas ref not ready for 4 cards portrait print.");
+          const placeholder = document.createElement("div");
+          placeholder.innerText =
+            "Combined canvas not ready for 4 cards portrait print. Please try again.";
+          placeholder.style.color = "red";
+          return placeholder;
+        }
+        return combinedCanvas;
       } else {
         // 'current' layout
         const stage = editorRef.current;
@@ -573,6 +600,65 @@ function App() {
         ctx.drawImage(trCanvas, cardWidth, 0, cardWidth, cardHeight);
         ctx.drawImage(blCanvas, 0, cardHeight, cardWidth, cardHeight);
         ctx.drawImage(brCanvas, cardWidth, cardHeight, cardWidth, cardHeight);
+      } else if (layoutMode === "4cards-portrait") {
+        const tlStage = editorStageRefs.current["top-left"];
+        const trStage = editorStageRefs.current["top-right"];
+        const blStage = editorStageRefs.current["bottom-left"];
+        const brStage = editorStageRefs.current["bottom-right"];
+        const combinedCanvas = combinedPrintCanvasRef.current;
+
+        if (!tlStage || !trStage || !blStage || !brStage || !combinedCanvas) {
+          console.error(
+            "Konva stages or combined canvas ref not ready for 4 cards portrait print.",
+          );
+          return;
+        }
+        const ctx = combinedCanvas.getContext("2d");
+        if (!ctx) {
+          console.error("Could not get 2D context for combined canvas.");
+          return;
+        }
+
+        const originalTlWidth = tlStage.width();
+        const originalTlHeight = tlStage.height();
+        const originalTrWidth = trStage.width();
+        const originalTrHeight = trStage.height();
+        const originalBlWidth = blStage.width();
+        const originalBlHeight = blStage.height();
+        const originalBrWidth = brStage.width();
+        const originalBrHeight = brStage.height();
+
+        const cardWidth = PRINT_PORTRAIT_WIDTH / 2;
+        const cardHeight = PRINT_PORTRAIT_HEIGHT / 2;
+
+        tlStage.width(cardWidth);
+        tlStage.height(cardHeight);
+        trStage.width(cardWidth);
+        trStage.height(cardHeight);
+        blStage.width(cardWidth);
+        blStage.height(cardHeight);
+        brStage.width(cardWidth);
+        brStage.height(cardHeight);
+
+        const tlCanvas = await tlStage.toCanvas({ pixelRatio: 2 });
+        const trCanvas = await trStage.toCanvas({ pixelRatio: 2 });
+        const blCanvas = await blStage.toCanvas({ pixelRatio: 2 });
+        const brCanvas = await brStage.toCanvas({ pixelRatio: 2 });
+
+        tlStage.width(originalTlWidth);
+        tlStage.height(originalTlHeight);
+        trStage.width(originalTrWidth);
+        trStage.height(originalTrHeight);
+        blStage.width(originalBlWidth);
+        blStage.height(originalBlHeight);
+        brStage.width(originalBrWidth);
+        brStage.height(originalBrHeight);
+
+        ctx.clearRect(0, 0, combinedCanvas.width, combinedCanvas.height);
+        ctx.drawImage(tlCanvas, 0, 0, cardWidth, cardHeight);
+        ctx.drawImage(trCanvas, cardWidth, 0, cardWidth, cardHeight);
+        ctx.drawImage(blCanvas, 0, cardHeight, cardWidth, cardHeight);
+        ctx.drawImage(brCanvas, cardWidth, cardHeight, cardWidth, cardHeight);
       } else {
         // 'current' layout
         const stage = editorRef.current;
@@ -591,8 +677,14 @@ function App() {
       return Promise.resolve();
     }, [layoutMode]),
     documentTitle: "Image Print",
-    pageStyle: `@page { size: ${PRINT_ASPECT_RATIO_WIDTH}px ${PRINT_ASPECT_RATIO_HEIGHT}px; margin: 0; }
-                @media print { body { -webkit-print-color-adjust: exact; } }`,
+    pageStyle: () => {
+      if (layoutMode === "4cards-portrait") {
+        return `@page { size: ${PRINT_PORTRAIT_WIDTH}px ${PRINT_PORTRAIT_HEIGHT}px; margin: 0; }
+                @media print { body { -webkit-print-color-adjust: exact; } }`;
+      }
+      return `@page { size: ${PRINT_ASPECT_RATIO_WIDTH}px ${PRINT_ASPECT_RATIO_HEIGHT}px; margin: 0; }
+              @media print { body { -webkit-print-color-adjust: exact; } }`;
+    },
   } as any);
 
   const editorPanelContent = useMemo(() => {
@@ -644,6 +736,100 @@ function App() {
     } else if (layoutMode === "4cards") {
       const cardWidth = PRINT_ASPECT_RATIO_WIDTH / 2;
       const cardHeight = PRINT_ASPECT_RATIO_HEIGHT / 2;
+      return (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(2, ${cardWidth}px)`,
+            gridTemplateRows: `repeat(2, ${cardHeight}px)`,
+            gap: "5px",
+          }}
+        >
+          <div
+            onClick={() => setActiveEditor("top-left")}
+            className={
+              activeEditor === "top-left"
+                ? "active-editor-wrapper"
+                : "editor-wrapper"
+            }
+          >
+            <Editor
+              {...editorStates["top-left"]}
+              onTextDragEnd={handleTextDragEnd}
+              onQrCodeDragEnd={onQrCodeDragEnd}
+              onEditorClick={handleEditorClick}
+              canvasWidth={cardWidth}
+              canvasHeight={cardHeight}
+              onStageReady={(stage) => {
+                editorStageRefs.current["top-left"] = stage;
+              }}
+            />
+          </div>
+          <div
+            onClick={() => setActiveEditor("top-right")}
+            className={
+              activeEditor === "top-right"
+                ? "active-editor-wrapper"
+                : "editor-wrapper"
+            }
+          >
+            <Editor
+              {...editorStates["top-right"]}
+              onTextDragEnd={handleTextDragEnd}
+              onQrCodeDragEnd={onQrCodeDragEnd}
+              onEditorClick={handleEditorClick}
+              canvasWidth={cardWidth}
+              canvasHeight={cardHeight}
+              onStageReady={(stage) => {
+                editorStageRefs.current["top-right"] = stage;
+              }}
+            />
+          </div>
+          <div
+            onClick={() => setActiveEditor("bottom-left")}
+            className={
+              activeEditor === "bottom-left"
+                ? "active-editor-wrapper"
+                : "editor-wrapper"
+            }
+          >
+            <Editor
+              {...editorStates["bottom-left"]}
+              onTextDragEnd={handleTextDragEnd}
+              onQrCodeDragEnd={onQrCodeDragEnd}
+              onEditorClick={handleEditorClick}
+              canvasWidth={cardWidth}
+              canvasHeight={cardHeight}
+              onStageReady={(stage) => {
+                editorStageRefs.current["bottom-left"] = stage;
+              }}
+            />
+          </div>
+          <div
+            onClick={() => setActiveEditor("bottom-right")}
+            className={
+              activeEditor === "bottom-right"
+                ? "active-editor-wrapper"
+                : "editor-wrapper"
+            }
+          >
+            <Editor
+              {...editorStates["bottom-right"]}
+              onTextDragEnd={handleTextDragEnd}
+              onQrCodeDragEnd={onQrCodeDragEnd}
+              onEditorClick={handleEditorClick}
+              canvasWidth={cardWidth}
+              canvasHeight={cardHeight}
+              onStageReady={(stage) => {
+                editorStageRefs.current["bottom-right"] = stage;
+              }}
+            />
+          </div>
+        </div>
+      );
+    } else if (layoutMode === "4cards-portrait") {
+      const cardWidth = PRINT_PORTRAIT_WIDTH / 2;
+      const cardHeight = PRINT_PORTRAIT_HEIGHT / 2;
       return (
         <div
           style={{

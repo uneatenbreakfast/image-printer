@@ -43,8 +43,8 @@ interface ControlsProps {
   onDefaultTextColorChange: (color: string) => void;
   onAddText: (content: string) => void; // content is now only argument
   onPrint: () => void;
-  layoutMode: 'current' | '2x3' | '4cards'; // Updated type
-  onLayoutChange: (mode: 'current' | '2x3' | '4cards') => void; // Updated type
+  layoutMode: 'current' | '2x3' | '4cards' | '4cards-portrait'; // Updated type
+  onLayoutChange: (mode: 'current' | '2x3' | '4cards' | '4cards-portrait') => void; // Updated type
   activeState: EditorState;
   templates: Template[];
   saveTemplate: (name: string) => void;
@@ -102,10 +102,11 @@ const Controls: React.FC<ControlsProps> = ({
     <div>
       <div className="control-group">
         <h3>Layout</h3>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button onClick={() => onLayoutChange('current')} disabled={layoutMode === 'current'}>Single</button>
           <button onClick={() => onLayoutChange('2x3')} disabled={layoutMode === '2x3'}>2x3 Split</button>
           <button onClick={() => onLayoutChange('4cards')} disabled={layoutMode === '4cards'}>4 Cards</button>
+          <button onClick={() => onLayoutChange('4cards-portrait')} disabled={layoutMode === '4cards-portrait'}>4 Cards Portrait</button>
         </div>
       </div>
 
