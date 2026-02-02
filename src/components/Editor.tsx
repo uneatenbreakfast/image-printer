@@ -94,7 +94,7 @@ const Editor: React.FC<EditorProps> = ({
       >
         <Layer>
           {/* Background color for empty areas */}
-          <Rect x={0} y={0} width={canvasWidth} height={canvasHeight} fill="#eeeeee" />
+          <Rect x={0} y={0} width={canvasWidth} height={canvasHeight} fill="#ffffff" />
 
           {/* Border Rect - drawn behind the clipped group */}
           {borderThickness > 0 && (

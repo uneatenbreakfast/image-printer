@@ -73,9 +73,9 @@ interface Template {
 }
 
 function App() {
-  const [layoutMode, setLayoutMode] = useState<"current" | "2x3" | "4cards" | "4cards-portrait">(
-    "current",
-  );
+  const [layoutMode, setLayoutMode] = useState<
+    "current" | "2x3" | "4cards" | "4cards-portrait"
+  >("current");
   const [activeEditor, setActiveEditor] = useState<
     "top-left" | "top-right" | "bottom-left" | "bottom-right"
   >("top-left");
@@ -140,6 +140,9 @@ function App() {
 
   // New ref for the hidden combined print canvas
   const combinedPrintCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Ref for react-to-print v3 contentRef API
+  const printContentRef = useRef<HTMLDivElement | null>(null);
 
   const editorRef = useRef<Konva.Stage | null>(null); // Ref for printing single editor's Konva Stage
 
@@ -272,7 +275,10 @@ function App() {
         ...prev,
         texts: prev.texts.map((text) =>
           text.id === id
-            ? { ...text, fontStyle: text.fontStyle === "bold" ? "normal" : "bold" }
+            ? {
+                ...text,
+                fontStyle: text.fontStyle === "bold" ? "normal" : "bold",
+              }
             : text,
         ),
       }));
@@ -492,244 +498,58 @@ function App() {
     [setTemplates],
   );
   const handlePrint = useReactToPrint({
-    content: () => {
-      if (layoutMode === "2x3") {
-        // Return the pre-existing, hidden combined canvas
-        return combinedPrintCanvasRef.current;
-      } else if (layoutMode === "4cards") {
-        const combinedCanvas = combinedPrintCanvasRef.current;
-        if (!combinedCanvas) {
-          console.error("Combined canvas ref not ready for 4 cards print.");
-          const placeholder = document.createElement("div");
-          placeholder.innerText =
-            "Combined canvas not ready for 4 cards print. Please try again.";
-          placeholder.style.color = "red";
-          return placeholder;
-        }
-        return combinedCanvas;
-      } else if (layoutMode === "4cards-portrait") {
-        const combinedCanvas = combinedPrintCanvasRef.current;
-        if (!combinedCanvas) {
-          console.error("Combined canvas ref not ready for 4 cards portrait print.");
-          const placeholder = document.createElement("div");
-          placeholder.innerText =
-            "Combined canvas not ready for 4 cards portrait print. Please try again.";
-          placeholder.style.color = "red";
-          return placeholder;
-        }
-        return combinedCanvas;
-      } else {
-        // 'current' layout
-        const stage = editorRef.current;
-        if (!stage) {
-          console.error("Konva stage not ready for single print.");
-          const placeholder = document.createElement("div");
-          placeholder.innerText =
-            "Editor not ready for single print. Please ensure an image is loaded.";
-          placeholder.style.color = "red";
-          return placeholder;
-        }
-        // Return the DOM container of the Konva Stage, which contains the canvas
-        return stage.container();
-      }
-    },
-    onBeforeGetContent: useCallback(async () => {
-      // Temporarily resize stages for high-res output and wait for images
-      if (layoutMode === "2x3") {
-        const leftStage = editorStageRefs.current["top-left"];
-        const rightStage = editorStageRefs.current["top-right"];
-        const combinedCanvas = combinedPrintCanvasRef.current; // Get the hidden combined canvas
-
-        if (!leftStage || !rightStage || !combinedCanvas) {
-          console.error(
-            "Konva stages or combined canvas ref not ready for 2x3 combined print.",
-          );
-          return; // Don't proceed with printing if refs are null
-        }
-        const ctx = combinedCanvas.getContext("2d");
-        if (!ctx) {
-          console.error("Could not get 2D context for combined canvas.");
-          return;
-        }
-
-        const originalLeftWidth = leftStage.width();
-        const originalLeftHeight = leftStage.height();
-        const originalRightWidth = rightStage.width();
-        const originalRightHeight = rightStage.height();
-
-        leftStage.width(PRINT_ASPECT_RATIO_WIDTH / 2);
-        leftStage.height(PRINT_ASPECT_RATIO_HEIGHT);
-        rightStage.width(PRINT_ASPECT_RATIO_WIDTH / 2);
-        rightStage.height(PRINT_ASPECT_RATIO_HEIGHT);
-
-        const leftCanvas = await leftStage.toCanvas({ pixelRatio: 2 });
-        const rightCanvas = await rightStage.toCanvas({ pixelRatio: 2 });
-
-        leftStage.width(originalLeftWidth);
-        leftStage.height(originalLeftHeight);
-        rightStage.width(originalRightWidth);
-        rightStage.height(originalRightHeight);
-
-        ctx.clearRect(0, 0, combinedCanvas.width, combinedCanvas.height);
-        ctx.drawImage(
-          leftCanvas,
-          0,
-          0,
-          PRINT_ASPECT_RATIO_WIDTH / 2,
-          PRINT_ASPECT_RATIO_HEIGHT,
-        );
-        ctx.drawImage(
-          rightCanvas,
-          PRINT_ASPECT_RATIO_WIDTH / 2,
-          0,
-          PRINT_ASPECT_RATIO_WIDTH / 2,
-          PRINT_ASPECT_RATIO_HEIGHT,
-        );
-      } else if (layoutMode === "4cards") {
-        const tlStage = editorStageRefs.current["top-left"];
-        const trStage = editorStageRefs.current["top-right"];
-        const blStage = editorStageRefs.current["bottom-left"];
-        const brStage = editorStageRefs.current["bottom-right"];
-        const combinedCanvas = combinedPrintCanvasRef.current;
-
-        if (!tlStage || !trStage || !blStage || !brStage || !combinedCanvas) {
-          console.error(
-            "Konva stages or combined canvas ref not ready for 4 cards print.",
-          );
-          return;
-        }
-        const ctx = combinedCanvas.getContext("2d");
-        if (!ctx) {
-          console.error("Could not get 2D context for combined canvas.");
-          return;
-        }
-
-        const originalTlWidth = tlStage.width();
-        const originalTlHeight = tlStage.height();
-        const originalTrWidth = trStage.width();
-        const originalTrHeight = trStage.height();
-        const originalBlWidth = blStage.width();
-        const originalBlHeight = blStage.height();
-        const originalBrWidth = brStage.width();
-        const originalBrHeight = brStage.height();
-
-        const cardWidth = PRINT_ASPECT_RATIO_WIDTH / 2;
-        const cardHeight = PRINT_ASPECT_RATIO_HEIGHT / 2;
-
-        tlStage.width(cardWidth);
-        tlStage.height(cardHeight);
-        trStage.width(cardWidth);
-        trStage.height(cardHeight);
-        blStage.width(cardWidth);
-        blStage.height(cardHeight);
-        brStage.width(cardWidth);
-        brStage.height(cardHeight);
-
-        const tlCanvas = await tlStage.toCanvas({ pixelRatio: 2 });
-        const trCanvas = await trStage.toCanvas({ pixelRatio: 2 });
-        const blCanvas = await await blStage.toCanvas({ pixelRatio: 2 }); // Typo: `await await`
-        const brCanvas = await brStage.toCanvas({ pixelRatio: 2 });
-
-        tlStage.width(originalTlWidth);
-        tlStage.height(originalTlHeight);
-        trStage.width(originalTrWidth);
-        trStage.height(originalTrHeight);
-        blStage.width(originalBlWidth);
-        blStage.height(originalBlHeight);
-        brStage.width(originalBrWidth);
-        brStage.height(originalBrHeight);
-
-        ctx.clearRect(0, 0, combinedCanvas.width, combinedCanvas.height);
-        ctx.drawImage(tlCanvas, 0, 0, cardWidth, cardHeight);
-        ctx.drawImage(trCanvas, cardWidth, 0, cardWidth, cardHeight);
-        ctx.drawImage(blCanvas, 0, cardHeight, cardWidth, cardHeight);
-        ctx.drawImage(brCanvas, cardWidth, cardHeight, cardWidth, cardHeight);
-      } else if (layoutMode === "4cards-portrait") {
-        const tlStage = editorStageRefs.current["top-left"];
-        const trStage = editorStageRefs.current["top-right"];
-        const blStage = editorStageRefs.current["bottom-left"];
-        const brStage = editorStageRefs.current["bottom-right"];
-        const combinedCanvas = combinedPrintCanvasRef.current;
-
-        if (!tlStage || !trStage || !blStage || !brStage || !combinedCanvas) {
-          console.error(
-            "Konva stages or combined canvas ref not ready for 4 cards portrait print.",
-          );
-          return;
-        }
-        const ctx = combinedCanvas.getContext("2d");
-        if (!ctx) {
-          console.error("Could not get 2D context for combined canvas.");
-          return;
-        }
-
-        const originalTlWidth = tlStage.width();
-        const originalTlHeight = tlStage.height();
-        const originalTrWidth = trStage.width();
-        const originalTrHeight = trStage.height();
-        const originalBlWidth = blStage.width();
-        const originalBlHeight = blStage.height();
-        const originalBrWidth = brStage.width();
-        const originalBrHeight = brStage.height();
-
-        const cardWidth = PRINT_PORTRAIT_WIDTH / 2;
-        const cardHeight = PRINT_PORTRAIT_HEIGHT / 2;
-
-        tlStage.width(cardWidth);
-        tlStage.height(cardHeight);
-        trStage.width(cardWidth);
-        trStage.height(cardHeight);
-        blStage.width(cardWidth);
-        blStage.height(cardHeight);
-        brStage.width(cardWidth);
-        brStage.height(cardHeight);
-
-        const tlCanvas = await tlStage.toCanvas({ pixelRatio: 2 });
-        const trCanvas = await trStage.toCanvas({ pixelRatio: 2 });
-        const blCanvas = await blStage.toCanvas({ pixelRatio: 2 });
-        const brCanvas = await brStage.toCanvas({ pixelRatio: 2 });
-
-        tlStage.width(originalTlWidth);
-        tlStage.height(originalTlHeight);
-        trStage.width(originalTrWidth);
-        trStage.height(originalTrHeight);
-        blStage.width(originalBlWidth);
-        blStage.height(originalBlHeight);
-        brStage.width(originalBrWidth);
-        brStage.height(originalBrHeight);
-
-        ctx.clearRect(0, 0, combinedCanvas.width, combinedCanvas.height);
-        ctx.drawImage(tlCanvas, 0, 0, cardWidth, cardHeight);
-        ctx.drawImage(trCanvas, cardWidth, 0, cardWidth, cardHeight);
-        ctx.drawImage(blCanvas, 0, cardHeight, cardWidth, cardHeight);
-        ctx.drawImage(brCanvas, cardWidth, cardHeight, cardWidth, cardHeight);
-      } else {
-        // 'current' layout
-        const stage = editorRef.current;
-        if (!stage) {
-          console.error("Konva stage not ready for single print.");
-          return;
-        }
-        const originalWidth = stage.width();
-        const originalHeight = stage.height();
-        stage.width(PRINT_ASPECT_RATIO_WIDTH);
-        stage.height(PRINT_ASPECT_RATIO_HEIGHT);
-        await stage.toDataURL(); // Just waiting for images to load
-        stage.width(originalWidth);
-        stage.height(originalHeight);
-      }
-      return Promise.resolve();
-    }, [layoutMode]),
+    contentRef: printContentRef,
     documentTitle: "Image Print",
-    pageStyle: () => {
-      if (layoutMode === "4cards-portrait") {
-        return `@page { size: ${PRINT_PORTRAIT_WIDTH}px ${PRINT_PORTRAIT_HEIGHT}px; margin: 0; }
-                @media print { body { -webkit-print-color-adjust: exact; } }`;
+    pageStyle: `
+      @page { 
+        size: ${layoutMode === "4cards-portrait" ? `${PRINT_PORTRAIT_WIDTH}px ${PRINT_PORTRAIT_HEIGHT}px` : `${PRINT_ASPECT_RATIO_WIDTH}px ${PRINT_ASPECT_RATIO_HEIGHT}px`}; 
+        margin: 0; 
+      } 
+      @media print { 
+        body { 
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        
+        /* White background */
+        body, html, #root, .app-container, .editor-panel, div {
+          background: white !important;
+          background-color: white !important;
+        }
+        
+        /* Remove all borders and padding from editor wrappers */
+        .editor-wrapper,
+        .active-editor-wrapper {
+          border: none !important;
+          outline: none !important;
+          box-shadow: none !important;
+          padding: 0 !important;
+          margin: 0 !important;
+        }
+        
+        /* Hide upload icon overlay */
+        .upload-icon-overlay {
+          display: none !important;
+          visibility: hidden !important;
+        }
+        
+        /* Hide remove buttons */
+        .element-remove-btn {
+          display: none !important;
+          visibility: hidden !important;
+        }
+        
+        /* Remove gaps between cards */
+        div[style*="display: flex"] {
+          gap: 0 !important;
+        }
+        
+        div[style*="display: grid"] {
+          gap: 0 !important;
+        }
       }
-      return `@page { size: ${PRINT_ASPECT_RATIO_WIDTH}px ${PRINT_ASPECT_RATIO_HEIGHT}px; margin: 0; }
-              @media print { body { -webkit-print-color-adjust: exact; } }`;
-    },
-  } as any);
+    `,
+  });
 
   const editorPanelContent = useMemo(() => {
     if (layoutMode === "2x3") {
@@ -1023,14 +843,9 @@ function App() {
         />
       </div>
       <div className="editor-panel">
-        {editorPanelContent}
-        <canvas
-          ref={combinedPrintCanvasRef}
-          width={PRINT_ASPECT_RATIO_WIDTH}
-          height={PRINT_ASPECT_RATIO_HEIGHT}
-          style={{ display: "none" }}
-        />{" "}
-        {/* Hidden canvas for combined print */}
+        <div ref={printContentRef}>
+          {editorPanelContent}
+        </div>
       </div>
     </div>
   );
