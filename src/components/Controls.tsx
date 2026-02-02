@@ -9,7 +9,8 @@ interface EditorState {
   borderColor: string;
   borderThickness: number;
   cornerRadius: number;
-  texts: any[]; // Can be TextElement[] but using any[] for simplicity here
+  texts: any[];
+  qrCodes: any[];
   scale: number;
   rotation: number;
   defaultTextContent: string;
@@ -35,22 +36,25 @@ interface ControlsProps {
   onCornerRadiusChange: (radius: number) => void;
   onScaleChange: (scale: number) => void;
   onRotationChange: (rotation: number) => void;
-  // QR Code handler
-  onAddQrCode: (url: string) => Promise<void>; // New prop
+  // QR Code handlers
+  onAddQrCode: (url: string) => Promise<void>;
+  onRemoveQrCode: (id: string) => void;
   // Default text property handlers
   onDefaultTextContentChange: (content: string) => void;
   onDefaultTextFontSizeChange: (size: number) => void;
   onDefaultTextColorChange: (color: string) => void;
-  onAddText: (content: string) => void; // content is now only argument
+  onAddText: (content: string) => void;
+  onRemoveText: (id: string) => void;
   onPrint: () => void;
-  layoutMode: 'current' | '2x3' | '4cards' | '4cards-portrait'; // Updated type
-  onLayoutChange: (mode: 'current' | '2x3' | '4cards' | '4cards-portrait') => void; // Updated type
+  layoutMode: 'current' | '2x3' | '4cards' | '4cards-portrait';
+  onLayoutChange: (mode: 'current' | '2x3' | '4cards' | '4cards-portrait') => void;
   activeState: EditorState;
   templates: Template[];
   saveTemplate: (name: string) => void;
   loadTemplate: (template: Template) => void;
   deleteTemplate: (name: string) => void;
-  fileInputRef: React.RefObject<HTMLInputElement | null>; // Corrected type
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  onRemoveImage: () => void;
 }
 
 const Controls: React.FC<ControlsProps> = ({
@@ -61,10 +65,12 @@ const Controls: React.FC<ControlsProps> = ({
   onScaleChange,
   onRotationChange,
   onAddQrCode,
+  onRemoveQrCode,
   onDefaultTextContentChange,
   onDefaultTextFontSizeChange,
   onDefaultTextColorChange,
   onAddText,
+  onRemoveText,
   onPrint,
   layoutMode,
   onLayoutChange,
@@ -73,7 +79,8 @@ const Controls: React.FC<ControlsProps> = ({
   saveTemplate,
   loadTemplate,
   deleteTemplate,
-  fileInputRef, // Destructure new prop
+  fileInputRef,
+  onRemoveImage,
 }) => {
   const [newTemplateName, setNewTemplateName] = useState<string>('');
   const [qrCodeUrlInput, setQrCodeUrlInput] = useState<string>('https://example.com'); // State for QR URL input
@@ -114,6 +121,14 @@ const Controls: React.FC<ControlsProps> = ({
         <h3>Image Upload</h3>
         <label>{layoutMode === '2x3' ? 'Active Image Upload' : 'Image Upload'}</label>
         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} />
+        {activeState.imageDataUrl && (
+          <button 
+            onClick={onRemoveImage} 
+            style={{ marginTop: '10px', backgroundColor: '#dc3545' }}
+          >
+            Remove Image
+          </button>
+        )}
       </div>
 
       <div className="control-group">
@@ -159,6 +174,40 @@ const Controls: React.FC<ControlsProps> = ({
           />
           <button onClick={() => onAddQrCode(qrCodeUrlInput)} style={{ marginTop: '10px' }}>Generate QR Code</button>
         </div>
+        {activeState.qrCodes.length > 0 && (
+          <div style={{ marginTop: '15px' }}>
+            <label>Added QR Codes:</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '5px' }}>
+              {activeState.qrCodes.map((qr, index) => (
+                <div 
+                  key={qr.id} 
+                  style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    padding: '5px 10px',
+                    backgroundColor: '#f5f5f5',
+                    borderRadius: '4px',
+                    fontSize: '0.9em'
+                  }}
+                >
+                  <span>QR Code {index + 1}</span>
+                  <button
+                    onClick={() => onRemoveQrCode(qr.id)}
+                    style={{ 
+                      width: 'auto', 
+                      padding: '2px 8px', 
+                      fontSize: '0.8em',
+                      backgroundColor: '#dc3545'
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="control-group">
@@ -221,6 +270,47 @@ const Controls: React.FC<ControlsProps> = ({
           />
         </div>
         <button onClick={handleAddText} style={{ marginTop: '10px' }}>Add Text</button>
+        {activeState.texts.length > 0 && (
+          <div style={{ marginTop: '15px' }}>
+            <label>Added Text Elements:</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '5px' }}>
+              {activeState.texts.map((text: any, index: number) => (
+                <div 
+                  key={text.id} 
+                  style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    padding: '5px 10px',
+                    backgroundColor: '#f5f5f5',
+                    borderRadius: '4px',
+                    fontSize: '0.9em'
+                  }}
+                >
+                  <span style={{ 
+                    overflow: 'hidden', 
+                    textOverflow: 'ellipsis', 
+                    whiteSpace: 'nowrap',
+                    maxWidth: '150px'
+                  }}>
+                    {text.content || `Text ${index + 1}`}
+                  </span>
+                  <button
+                    onClick={() => onRemoveText(text.id)}
+                    style={{ 
+                      width: 'auto', 
+                      padding: '2px 8px', 
+                      fontSize: '0.8em',
+                      backgroundColor: '#dc3545'
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="control-group">

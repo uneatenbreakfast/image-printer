@@ -150,7 +150,7 @@ function App() {
     fileInputRef.current?.click();
   }, []);
 
-  // activeState and setActiveState should be declared before handleEditorClick
+  // activeState and setActiveState for managing editor state
   const activeState =
     layoutMode === "current"
       ? editorStates["top-left"]
@@ -179,13 +179,6 @@ function App() {
     },
     [activeEditor, layoutMode],
   );
-
-  // Function to handle click on editor area to trigger file input
-  const handleEditorClick = useCallback(() => {
-    if (!activeState.imageDataUrl) {
-      triggerFileInput();
-    }
-  }, [activeState.imageDataUrl, triggerFileInput]);
 
   const handleImageUpload = useCallback(
     (dataUrl: string) => {
@@ -318,6 +311,30 @@ function App() {
         qrCodes: prev.qrCodes.map((qr) =>
           qr.id === id ? { ...qr, x: newX, y: newY } : qr,
         ),
+      }));
+    },
+    [setActiveState],
+  );
+
+  const handleRemoveImage = useCallback(() => {
+    setActiveState((prev) => ({ ...prev, imageDataUrl: null }));
+  }, [setActiveState]);
+
+  const handleRemoveQrCode = useCallback(
+    (id: string) => {
+      setActiveState((prev) => ({
+        ...prev,
+        qrCodes: prev.qrCodes.filter((qr) => qr.id !== id),
+      }));
+    },
+    [setActiveState],
+  );
+
+  const handleRemoveText = useCallback(
+    (id: string) => {
+      setActiveState((prev) => ({
+        ...prev,
+        texts: prev.texts.filter((text) => text.id !== id),
       }));
     },
     [setActiveState],
@@ -703,7 +720,9 @@ function App() {
               {...editorStates["top-left"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onEditorClick={handleEditorClick}
+              onRemoveText={handleRemoveText}
+              onRemoveQrCode={handleRemoveQrCode}
+              onUploadClick={triggerFileInput}
               canvasWidth={PRINT_ASPECT_RATIO_WIDTH / 2}
               canvasHeight={PRINT_ASPECT_RATIO_HEIGHT}
               onStageReady={(stage) => {
@@ -723,7 +742,9 @@ function App() {
               {...editorStates["top-right"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onEditorClick={handleEditorClick}
+              onRemoveText={handleRemoveText}
+              onRemoveQrCode={handleRemoveQrCode}
+              onUploadClick={triggerFileInput}
               canvasWidth={PRINT_ASPECT_RATIO_WIDTH / 2}
               canvasHeight={PRINT_ASPECT_RATIO_HEIGHT}
               onStageReady={(stage) => {
@@ -757,7 +778,9 @@ function App() {
               {...editorStates["top-left"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onEditorClick={handleEditorClick}
+              onRemoveText={handleRemoveText}
+              onRemoveQrCode={handleRemoveQrCode}
+              onUploadClick={triggerFileInput}
               canvasWidth={cardWidth}
               canvasHeight={cardHeight}
               onStageReady={(stage) => {
@@ -777,7 +800,9 @@ function App() {
               {...editorStates["top-right"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onEditorClick={handleEditorClick}
+              onRemoveText={handleRemoveText}
+              onRemoveQrCode={handleRemoveQrCode}
+              onUploadClick={triggerFileInput}
               canvasWidth={cardWidth}
               canvasHeight={cardHeight}
               onStageReady={(stage) => {
@@ -797,7 +822,9 @@ function App() {
               {...editorStates["bottom-left"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onEditorClick={handleEditorClick}
+              onRemoveText={handleRemoveText}
+              onRemoveQrCode={handleRemoveQrCode}
+              onUploadClick={triggerFileInput}
               canvasWidth={cardWidth}
               canvasHeight={cardHeight}
               onStageReady={(stage) => {
@@ -817,7 +844,9 @@ function App() {
               {...editorStates["bottom-right"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onEditorClick={handleEditorClick}
+              onRemoveText={handleRemoveText}
+              onRemoveQrCode={handleRemoveQrCode}
+              onUploadClick={triggerFileInput}
               canvasWidth={cardWidth}
               canvasHeight={cardHeight}
               onStageReady={(stage) => {
@@ -851,7 +880,9 @@ function App() {
               {...editorStates["top-left"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onEditorClick={handleEditorClick}
+              onRemoveText={handleRemoveText}
+              onRemoveQrCode={handleRemoveQrCode}
+              onUploadClick={triggerFileInput}
               canvasWidth={cardWidth}
               canvasHeight={cardHeight}
               onStageReady={(stage) => {
@@ -871,7 +902,9 @@ function App() {
               {...editorStates["top-right"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onEditorClick={handleEditorClick}
+              onRemoveText={handleRemoveText}
+              onRemoveQrCode={handleRemoveQrCode}
+              onUploadClick={triggerFileInput}
               canvasWidth={cardWidth}
               canvasHeight={cardHeight}
               onStageReady={(stage) => {
@@ -891,7 +924,9 @@ function App() {
               {...editorStates["bottom-left"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onEditorClick={handleEditorClick}
+              onRemoveText={handleRemoveText}
+              onRemoveQrCode={handleRemoveQrCode}
+              onUploadClick={triggerFileInput}
               canvasWidth={cardWidth}
               canvasHeight={cardHeight}
               onStageReady={(stage) => {
@@ -911,7 +946,9 @@ function App() {
               {...editorStates["bottom-right"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onEditorClick={handleEditorClick}
+              onRemoveText={handleRemoveText}
+              onRemoveQrCode={handleRemoveQrCode}
+              onUploadClick={triggerFileInput}
               canvasWidth={cardWidth}
               canvasHeight={cardHeight}
               onStageReady={(stage) => {
@@ -928,7 +965,9 @@ function App() {
         {...editorStates["top-left"]} // 'top-left' is the default for single layout
         onTextDragEnd={handleTextDragEnd}
         onQrCodeDragEnd={onQrCodeDragEnd}
-        onEditorClick={handleEditorClick}
+        onRemoveText={handleRemoveText}
+        onRemoveQrCode={handleRemoveQrCode}
+        onUploadClick={triggerFileInput}
         canvasWidth={PRINT_ASPECT_RATIO_WIDTH}
         canvasHeight={PRINT_ASPECT_RATIO_HEIGHT}
         onStageReady={(stage) => {
@@ -942,7 +981,9 @@ function App() {
     activeEditor,
     handleTextDragEnd,
     onQrCodeDragEnd,
-    handleEditorClick,
+    handleRemoveText,
+    handleRemoveQrCode,
+    triggerFileInput,
   ]);
 
   return (
@@ -957,11 +998,13 @@ function App() {
           onRotationChange={handleRotationChange}
           // QR Code Handlers
           onAddQrCode={handleAddQrCode}
+          onRemoveQrCode={handleRemoveQrCode}
           // Pass default text handlers
           onDefaultTextContentChange={handleDefaultTextContentChange}
           onDefaultTextFontSizeChange={handleDefaultTextFontSizeChange}
           onDefaultTextColorChange={handleDefaultTextColorChange}
           onAddText={handleAddText}
+          onRemoveText={handleRemoveText}
           onPrint={handlePrint}
           layoutMode={layoutMode}
           onLayoutChange={setLayoutMode}
@@ -971,6 +1014,7 @@ function App() {
           loadTemplate={loadTemplate}
           deleteTemplate={deleteTemplate}
           fileInputRef={fileInputRef} // Pass fileInputRef to Controls
+          onRemoveImage={handleRemoveImage}
         />
       </div>
       <div className="editor-panel">
