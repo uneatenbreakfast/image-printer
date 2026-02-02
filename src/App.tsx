@@ -79,6 +79,7 @@ function App() {
   const [activeEditor, setActiveEditor] = useState<
     "top-left" | "top-right" | "bottom-left" | "bottom-right"
   >("top-left");
+  const [printTrigger, setPrintTrigger] = useState(0); // Used to force re-render after print
 
   const [editorStates, setEditorStates] = useState<
     Record<
@@ -497,8 +498,99 @@ function App() {
     },
     [setTemplates],
   );
+  // High-resolution print preparation
+  const preparePrintContent = useCallback(async () => {
+    const printContainer = printContentRef.current;
+    if (!printContainer) return;
+
+    // Create a high-res canvas for printing
+    let printWidth: number;
+    let printHeight: number;
+    
+    if (layoutMode === "4cards-portrait") {
+      printWidth = PRINT_PORTRAIT_WIDTH;
+      printHeight = PRINT_PORTRAIT_HEIGHT;
+    } else {
+      printWidth = PRINT_ASPECT_RATIO_WIDTH;
+      printHeight = PRINT_ASPECT_RATIO_HEIGHT;
+    }
+
+    // High-res multiplier
+    const multiplier = 3;
+    const highResWidth = printWidth * multiplier;
+    const highResHeight = printHeight * multiplier;
+
+    const printCanvas = document.createElement("canvas");
+    printCanvas.width = highResWidth;
+    printCanvas.height = highResHeight;
+    printCanvas.style.width = `${printWidth}px`;
+    printCanvas.style.height = `${printHeight}px`;
+    
+    const ctx = printCanvas.getContext("2d");
+    if (!ctx) return;
+
+    // White background
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, highResWidth, highResHeight);
+
+    // Capture stages at high resolution
+    if (layoutMode === "2x3") {
+      const leftStage = editorStageRefs.current["top-left"];
+      const rightStage = editorStageRefs.current["top-right"];
+      if (!leftStage || !rightStage) return;
+
+      const leftCanvas = await leftStage.toCanvas({ pixelRatio: multiplier });
+      const rightCanvas = await rightStage.toCanvas({ pixelRatio: multiplier });
+
+      const halfWidth = highResWidth / 2;
+      ctx.drawImage(leftCanvas, 0, 0, halfWidth, highResHeight);
+      ctx.drawImage(rightCanvas, halfWidth, 0, halfWidth, highResHeight);
+    } else if (layoutMode === "4cards" || layoutMode === "4cards-portrait") {
+      const tlStage = editorStageRefs.current["top-left"];
+      const trStage = editorStageRefs.current["top-right"];
+      const blStage = editorStageRefs.current["bottom-left"];
+      const brStage = editorStageRefs.current["bottom-right"];
+      
+      if (!tlStage || !trStage || !blStage || !brStage) return;
+
+      const tlCanvas = await tlStage.toCanvas({ pixelRatio: multiplier });
+      const trCanvas = await trStage.toCanvas({ pixelRatio: multiplier });
+      const blCanvas = await blStage.toCanvas({ pixelRatio: multiplier });
+      const brCanvas = await brStage.toCanvas({ pixelRatio: multiplier });
+
+      const cardWidth = highResWidth / 2;
+      const cardHeight = highResHeight / 2;
+
+      ctx.drawImage(tlCanvas, 0, 0, cardWidth, cardHeight);
+      ctx.drawImage(trCanvas, cardWidth, 0, cardWidth, cardHeight);
+      ctx.drawImage(blCanvas, 0, cardHeight, cardWidth, cardHeight);
+      ctx.drawImage(brCanvas, cardWidth, cardHeight, cardWidth, cardHeight);
+    } else {
+      // Single layout
+      const stage = editorRef.current;
+      if (!stage) return;
+
+      const canvas = await stage.toCanvas({ pixelRatio: multiplier });
+      ctx.drawImage(canvas, 0, 0, highResWidth, highResHeight);
+    }
+
+    // Replace the editor content with high-res canvas for printing
+    printContainer.innerHTML = "";
+    printContainer.appendChild(printCanvas);
+  }, [layoutMode]);
+
   const handlePrint = useReactToPrint({
     contentRef: printContentRef,
+    onBeforePrint: preparePrintContent,
+    onAfterPrint: () => {
+      // Restore the editor UI after printing
+      const printContainer = printContentRef.current;
+      if (printContainer) {
+        printContainer.innerHTML = "";
+        // Force React to re-render the editor content
+        setPrintTrigger(prev => prev + 1);
+      }
+    },
     documentTitle: "Image Print",
     pageStyle: `
       @page { 
@@ -807,6 +899,7 @@ function App() {
     handleTextDragEnd,
     onQrCodeDragEnd,
     triggerFileInput,
+    printTrigger,
   ]);
 
   return (
