@@ -19,6 +19,7 @@ interface TextElement {
   fontSize: number;
   fontFamily: string;
   fill: string;
+  fontStyle?: string; // 'bold', 'italic', etc.
 }
 
 interface QrCodeElement {
@@ -247,6 +248,32 @@ function App() {
         ...prev,
         texts: prev.texts.map((text) =>
           text.id === id ? { ...text, x: newX, y: newY } : text,
+        ),
+      }));
+    },
+    [setActiveState],
+  );
+
+  const handleEditText = useCallback(
+    (id: string, newContent: string) => {
+      setActiveState((prev) => ({
+        ...prev,
+        texts: prev.texts.map((text) =>
+          text.id === id ? { ...text, content: newContent } : text,
+        ),
+      }));
+    },
+    [setActiveState],
+  );
+
+  const handleToggleTextBold = useCallback(
+    (id: string) => {
+      setActiveState((prev) => ({
+        ...prev,
+        texts: prev.texts.map((text) =>
+          text.id === id
+            ? { ...text, fontStyle: text.fontStyle === "bold" ? "normal" : "bold" }
+            : text,
         ),
       }));
     },
@@ -981,6 +1008,8 @@ function App() {
           onDefaultTextColorChange={handleDefaultTextColorChange}
           onAddText={handleAddText}
           onRemoveText={handleRemoveText}
+          onEditText={handleEditText}
+          onToggleTextBold={handleToggleTextBold}
           onPrint={handlePrint}
           layoutMode={layoutMode}
           onLayoutChange={setLayoutMode}

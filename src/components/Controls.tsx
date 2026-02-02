@@ -45,6 +45,8 @@ interface ControlsProps {
   onDefaultTextColorChange: (color: string) => void;
   onAddText: (content: string) => void;
   onRemoveText: (id: string) => void;
+  onEditText: (id: string, newContent: string) => void;
+  onToggleTextBold: (id: string) => void;
   onPrint: () => void;
   layoutMode: 'current' | '2x3' | '4cards' | '4cards-portrait';
   onLayoutChange: (mode: 'current' | '2x3' | '4cards' | '4cards-portrait') => void;
@@ -71,6 +73,8 @@ const Controls: React.FC<ControlsProps> = ({
   onDefaultTextColorChange,
   onAddText,
   onRemoveText,
+  onEditText,
+  onToggleTextBold,
   onPrint,
   layoutMode,
   onLayoutChange,
@@ -274,38 +278,57 @@ const Controls: React.FC<ControlsProps> = ({
           <div style={{ marginTop: '15px' }}>
             <label>Added Text Elements:</label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '5px' }}>
-              {activeState.texts.map((text: any, index: number) => (
-                <div 
-                  key={text.id} 
-                  style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    padding: '5px 10px',
+              {activeState.texts.map((text: any) => (
+              <div
+                  key={text.id}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '5px',
+                    padding: '8px 10px',
                     backgroundColor: '#f5f5f5',
                     borderRadius: '4px',
                     fontSize: '0.9em'
                   }}
                 >
-                  <span style={{ 
-                    overflow: 'hidden', 
-                    textOverflow: 'ellipsis', 
-                    whiteSpace: 'nowrap',
-                    maxWidth: '150px'
-                  }}>
-                    {text.content || `Text ${index + 1}`}
-                  </span>
-                  <button
-                    onClick={() => onRemoveText(text.id)}
-                    style={{ 
-                      width: 'auto', 
-                      padding: '2px 8px', 
-                      fontSize: '0.8em',
-                      backgroundColor: '#dc3545'
+                  <input
+                    type="text"
+                    value={text.content}
+                    onChange={(e) => onEditText(text.id, e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '4px 8px',
+                      border: '1px solid #ccc',
+                      borderRadius: '3px',
+                      fontSize: '0.9em'
                     }}
-                  >
-                    Remove
-                  </button>
+                  />
+                  <div style={{ display: 'flex', gap: '5px', justifyContent: 'space-between' }}>
+                    <button
+                      onClick={() => onToggleTextBold(text.id)}
+                      style={{
+                        width: 'auto',
+                        padding: '2px 8px',
+                        fontSize: '0.8em',
+                        backgroundColor: text.fontStyle === 'bold' ? '#007bff' : '#6c757d',
+                        flex: 1
+                      }}
+                    >
+                      {text.fontStyle === 'bold' ? 'Bold ✓' : 'Bold'}
+                    </button>
+                    <button
+                      onClick={() => onRemoveText(text.id)}
+                      style={{
+                        width: 'auto',
+                        padding: '2px 8px',
+                        fontSize: '0.8em',
+                        backgroundColor: '#dc3545',
+                        flex: 1
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
