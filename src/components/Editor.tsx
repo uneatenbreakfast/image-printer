@@ -33,8 +33,6 @@ interface EditorProps {
   rotation: number;
   onTextDragEnd: (id: string, x: number, y: number) => void;
   onQrCodeDragEnd: (id: string, newX: number, newY: number) => void;
-  onRemoveText: (id: string) => void;
-  onRemoveQrCode: (id: string) => void;
   onUploadClick: () => void;
   canvasWidth: number;
   canvasHeight: number;
@@ -52,8 +50,6 @@ const Editor: React.FC<EditorProps> = ({
   rotation,
   onTextDragEnd,
   onQrCodeDragEnd,
-  onRemoveText,
-  onRemoveQrCode,
   onUploadClick,
   canvasWidth,
   canvasHeight,
@@ -222,86 +218,6 @@ const Editor: React.FC<EditorProps> = ({
           </div>
         </div>
       )}
-
-      {/* Remove buttons for text elements */}
-      {texts.map((textItem) => (
-        <button
-          key={`remove-text-${textItem.id}`}
-          onClick={() => onRemoveText(textItem.id)}
-          style={{
-            position: 'absolute',
-            left: `${textItem.x}px`,
-            top: `${textItem.y - 12}px`,
-            width: '24px',
-            height: '24px',
-            backgroundColor: '#dc3545',
-            color: 'white',
-            border: '2px solid white',
-            borderRadius: '50%',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100,
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
-            padding: 0,
-            lineHeight: 1,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#c82333';
-            e.currentTarget.style.transform = 'scale(1.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#dc3545';
-            e.currentTarget.style.transform = 'scale(1)';
-          }}
-          title="Remove text"
-        >
-          ×
-        </button>
-      ))}
-
-      {/* Remove buttons for QR codes */}
-      {qrCodes.map((qr) => (
-        <button
-          key={`remove-qr-${qr.id}`}
-          onClick={() => onRemoveQrCode(qr.id)}
-          style={{
-            position: 'absolute',
-            left: `${qr.x + qr.size - 12}px`,
-            top: `${qr.y - 12}px`,
-            width: '24px',
-            height: '24px',
-            backgroundColor: '#dc3545',
-            color: 'white',
-            border: '2px solid white',
-            borderRadius: '50%',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100,
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
-            padding: 0,
-            lineHeight: 1,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#c82333';
-            e.currentTarget.style.transform = 'scale(1.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#dc3545';
-            e.currentTarget.style.transform = 'scale(1)';
-          }}
-          title="Remove QR code"
-        >
-          ×
-        </button>
-      ))}
     </div>
   );
 };

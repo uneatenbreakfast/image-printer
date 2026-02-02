@@ -720,8 +720,6 @@ function App() {
               {...editorStates["top-left"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onRemoveText={handleRemoveText}
-              onRemoveQrCode={handleRemoveQrCode}
               onUploadClick={triggerFileInput}
               canvasWidth={PRINT_ASPECT_RATIO_WIDTH / 2}
               canvasHeight={PRINT_ASPECT_RATIO_HEIGHT}
@@ -742,8 +740,6 @@ function App() {
               {...editorStates["top-right"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onRemoveText={handleRemoveText}
-              onRemoveQrCode={handleRemoveQrCode}
               onUploadClick={triggerFileInput}
               canvasWidth={PRINT_ASPECT_RATIO_WIDTH / 2}
               canvasHeight={PRINT_ASPECT_RATIO_HEIGHT}
@@ -778,8 +774,6 @@ function App() {
               {...editorStates["top-left"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onRemoveText={handleRemoveText}
-              onRemoveQrCode={handleRemoveQrCode}
               onUploadClick={triggerFileInput}
               canvasWidth={cardWidth}
               canvasHeight={cardHeight}
@@ -800,8 +794,6 @@ function App() {
               {...editorStates["top-right"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onRemoveText={handleRemoveText}
-              onRemoveQrCode={handleRemoveQrCode}
               onUploadClick={triggerFileInput}
               canvasWidth={cardWidth}
               canvasHeight={cardHeight}
@@ -822,8 +814,6 @@ function App() {
               {...editorStates["bottom-left"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onRemoveText={handleRemoveText}
-              onRemoveQrCode={handleRemoveQrCode}
               onUploadClick={triggerFileInput}
               canvasWidth={cardWidth}
               canvasHeight={cardHeight}
@@ -844,8 +834,6 @@ function App() {
               {...editorStates["bottom-right"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onRemoveText={handleRemoveText}
-              onRemoveQrCode={handleRemoveQrCode}
               onUploadClick={triggerFileInput}
               canvasWidth={cardWidth}
               canvasHeight={cardHeight}
@@ -880,8 +868,6 @@ function App() {
               {...editorStates["top-left"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onRemoveText={handleRemoveText}
-              onRemoveQrCode={handleRemoveQrCode}
               onUploadClick={triggerFileInput}
               canvasWidth={cardWidth}
               canvasHeight={cardHeight}
@@ -902,8 +888,6 @@ function App() {
               {...editorStates["top-right"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onRemoveText={handleRemoveText}
-              onRemoveQrCode={handleRemoveQrCode}
               onUploadClick={triggerFileInput}
               canvasWidth={cardWidth}
               canvasHeight={cardHeight}
@@ -924,8 +908,6 @@ function App() {
               {...editorStates["bottom-left"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onRemoveText={handleRemoveText}
-              onRemoveQrCode={handleRemoveQrCode}
               onUploadClick={triggerFileInput}
               canvasWidth={cardWidth}
               canvasHeight={cardHeight}
@@ -946,8 +928,6 @@ function App() {
               {...editorStates["bottom-right"]}
               onTextDragEnd={handleTextDragEnd}
               onQrCodeDragEnd={onQrCodeDragEnd}
-              onRemoveText={handleRemoveText}
-              onRemoveQrCode={handleRemoveQrCode}
               onUploadClick={triggerFileInput}
               canvasWidth={cardWidth}
               canvasHeight={cardHeight}
@@ -965,8 +945,6 @@ function App() {
         {...editorStates["top-left"]} // 'top-left' is the default for single layout
         onTextDragEnd={handleTextDragEnd}
         onQrCodeDragEnd={onQrCodeDragEnd}
-        onRemoveText={handleRemoveText}
-        onRemoveQrCode={handleRemoveQrCode}
         onUploadClick={triggerFileInput}
         canvasWidth={PRINT_ASPECT_RATIO_WIDTH}
         canvasHeight={PRINT_ASPECT_RATIO_HEIGHT}
@@ -981,8 +959,6 @@ function App() {
     activeEditor,
     handleTextDragEnd,
     onQrCodeDragEnd,
-    handleRemoveText,
-    handleRemoveQrCode,
     triggerFileInput,
   ]);
 
