@@ -4,6 +4,17 @@ import { SketchPicker } from 'react-color';
 
 // Re-defining these types from App.tsx to avoid circular dependencies.
 // In a larger app, this would be in a shared types file.
+interface TextElement {
+  id: string;
+  x: number;
+  y: number;
+  content: string;
+  fontSize: number;
+  fontFamily: string;
+  fill: string;
+  fontStyle?: string;
+}
+
 interface EditorState {
   imageDataUrl: string | null;
   borderColor: string;
@@ -26,6 +37,7 @@ interface Template {
   defaultTextContent: string;
   defaultTextFontSize: number;
   defaultTextColor: string;
+  texts: TextElement[];
   thumbnailDataUrl?: string; // New optional property for thumbnail
 }
 
@@ -249,11 +261,12 @@ const Controls: React.FC<ControlsProps> = ({
         <h3>Text Controls</h3>
         <div>
           <label>Content:</label>
-          <input
-            type="text"
+          <textarea
             value={activeState.defaultTextContent}
             onChange={(e) => onDefaultTextContentChange(e.target.value)}
-            placeholder="Enter text"
+            placeholder="Enter text (use Shift+Enter for new line)"
+            rows={3}
+            style={{ width: '100%', resize: 'vertical' }}
           />
         </div>
         <div>
@@ -291,8 +304,7 @@ const Controls: React.FC<ControlsProps> = ({
                     fontSize: '0.9em'
                   }}
                 >
-                  <input
-                    type="text"
+                  <textarea
                     value={text.content}
                     onChange={(e) => onEditText(text.id, e.target.value)}
                     style={{
@@ -300,8 +312,11 @@ const Controls: React.FC<ControlsProps> = ({
                       padding: '4px 8px',
                       border: '1px solid #ccc',
                       borderRadius: '3px',
-                      fontSize: '0.9em'
+                      fontSize: '0.9em',
+                      resize: 'vertical',
+                      minHeight: '60px'
                     }}
+                    rows={2}
                   />
                   <div style={{ display: 'flex', gap: '5px', justifyContent: 'space-between' }}>
                     <button

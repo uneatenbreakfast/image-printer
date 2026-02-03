@@ -62,13 +62,14 @@ const initialEditorState: EditorState = {
 // Interface for saved templates
 interface Template {
   name: string;
-  // All properties from EditorState except imageDataUrl, texts, scale, and rotation
+  // All properties from EditorState except imageDataUrl, scale, and rotation
   borderColor: string;
   borderThickness: number;
   cornerRadius: number;
   defaultTextContent: string;
   defaultTextFontSize: number;
   defaultTextColor: string;
+  texts: TextElement[]; // Now saving text elements
   thumbnailDataUrl?: string; // New optional property for thumbnail
 }
 
@@ -79,7 +80,6 @@ function App() {
   const [activeEditor, setActiveEditor] = useState<
     "top-left" | "top-right" | "bottom-left" | "bottom-right"
   >("top-left");
-  const [printTrigger, setPrintTrigger] = useState(0); // Used to force re-render after print
 
   const [editorStates, setEditorStates] = useState<
     Record<
@@ -444,7 +444,6 @@ function App() {
       }
       const {
         imageDataUrl,
-        texts,
         scale,
         rotation,
         qrCodes,
@@ -480,6 +479,7 @@ function App() {
         defaultTextContent: template.defaultTextContent,
         defaultTextFontSize: template.defaultTextFontSize,
         defaultTextColor: template.defaultTextColor,
+        texts: template.texts || [], // Restore text elements from template
       }));
     },
     [setActiveState],
@@ -579,17 +579,15 @@ function App() {
     printContainer.appendChild(printCanvas);
   }, [layoutMode]);
 
+  // State to force editor re-render after print
+  const [printVersion, setPrintVersion] = useState(0);
+
   const handlePrint = useReactToPrint({
     contentRef: printContentRef,
     onBeforePrint: preparePrintContent,
     onAfterPrint: () => {
-      // Restore the editor UI after printing
-      const printContainer = printContentRef.current;
-      if (printContainer) {
-        printContainer.innerHTML = "";
-        // Force React to re-render the editor content
-        setPrintTrigger(prev => prev + 1);
-      }
+      // Force React to re-render the editor by updating state
+      setPrintVersion(v => v + 1);
     },
     documentTitle: "Image Print",
     pageStyle: `
@@ -899,7 +897,7 @@ function App() {
     handleTextDragEnd,
     onQrCodeDragEnd,
     triggerFileInput,
-    printTrigger,
+    printVersion,
   ]);
 
   return (

@@ -12,6 +12,7 @@ interface TextElement {
   fontSize: number;
   fontFamily: string;
   fill: string;
+  fontStyle?: string;
 }
 
 interface QrCodeElement {
@@ -158,6 +159,9 @@ const Editor: React.FC<EditorProps> = ({
               fontSize={textItem.fontSize}
               fontFamily={textItem.fontFamily}
               fill={textItem.fill}
+              fontStyle={textItem.fontStyle || 'normal'}
+              width={canvasWidth - textItem.x - 20} // Allow text to wrap within canvas bounds
+              lineHeight={1.2}
               draggable
               onDragEnd={(e) => {
                 onTextDragEnd(textItem.id, e.target.x(), e.target.y());
