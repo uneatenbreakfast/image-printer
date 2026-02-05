@@ -81,6 +81,14 @@ function App() {
     "top-left" | "top-right" | "bottom-left" | "bottom-right"
   >("top-left");
 
+  // Canvas margins state (applies to entire canvas area, not per-card)
+  const [canvasMargins, setCanvasMargins] = useState({
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+  });
+
   const [editorStates, setEditorStates] = useState<
     Record<
       "top-left" | "top-right" | "bottom-left" | "bottom-right",
@@ -309,6 +317,23 @@ function App() {
     [setActiveState],
   );
 
+  // Canvas margin handlers (apply to entire canvas area)
+  const handleCanvasMarginTopChange = useCallback((margin: number) => {
+    setCanvasMargins((prev) => ({ ...prev, top: margin }));
+  }, []);
+
+  const handleCanvasMarginBottomChange = useCallback((margin: number) => {
+    setCanvasMargins((prev) => ({ ...prev, bottom: margin }));
+  }, []);
+
+  const handleCanvasMarginLeftChange = useCallback((margin: number) => {
+    setCanvasMargins((prev) => ({ ...prev, left: margin }));
+  }, []);
+
+  const handleCanvasMarginRightChange = useCallback((margin: number) => {
+    setCanvasMargins((prev) => ({ ...prev, right: margin }));
+  }, []);
+
   const handleAddQrCode = useCallback(
     async (url: string) => {
       if (!url) {
@@ -442,13 +467,8 @@ function App() {
         alert("Template name cannot be empty.");
         return;
       }
-      const {
-        imageDataUrl,
-        scale,
-        rotation,
-        qrCodes,
-        ...settingsToSave
-      } = activeState;
+      const { imageDataUrl, scale, rotation, qrCodes, ...settingsToSave } =
+        activeState;
       const thumbnailDataUrl = await generateThumbnail(activeState); // Generate thumbnail
 
       const newTemplate: Template = {
@@ -506,7 +526,7 @@ function App() {
     // Create a high-res canvas for printing
     let printWidth: number;
     let printHeight: number;
-    
+
     if (layoutMode === "4cards-portrait") {
       printWidth = PRINT_PORTRAIT_WIDTH;
       printHeight = PRINT_PORTRAIT_HEIGHT;
@@ -525,13 +545,22 @@ function App() {
     printCanvas.height = highResHeight;
     printCanvas.style.width = `${printWidth}px`;
     printCanvas.style.height = `${printHeight}px`;
-    
+
     const ctx = printCanvas.getContext("2d");
     if (!ctx) return;
 
     // White background
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, highResWidth, highResHeight);
+
+    // Calculate content area size after margins (in high-res)
+    const marginLeft = canvasMargins.left * multiplier;
+    const marginRight = canvasMargins.right * multiplier;
+    const marginTop = canvasMargins.top * multiplier;
+    const marginBottom = canvasMargins.bottom * multiplier;
+
+    const contentWidth = highResWidth - marginLeft - marginRight;
+    const contentHeight = highResHeight - marginTop - marginBottom;
 
     // Capture stages at high resolution
     if (layoutMode === "2x3") {
@@ -542,15 +571,30 @@ function App() {
       const leftCanvas = await leftStage.toCanvas({ pixelRatio: multiplier });
       const rightCanvas = await rightStage.toCanvas({ pixelRatio: multiplier });
 
-      const halfWidth = highResWidth / 2;
-      ctx.drawImage(leftCanvas, 0, 0, halfWidth, highResHeight);
-      ctx.drawImage(rightCanvas, halfWidth, 0, halfWidth, highResHeight);
+      const halfContentWidth = contentWidth / 2;
+
+      // Draw left card at (marginLeft, marginTop) with half content width
+      ctx.drawImage(
+        leftCanvas,
+        marginLeft,
+        marginTop,
+        halfContentWidth,
+        contentHeight,
+      );
+      // Draw right card at (marginLeft + halfContentWidth, marginTop) with half content width
+      ctx.drawImage(
+        rightCanvas,
+        marginLeft + halfContentWidth,
+        marginTop,
+        halfContentWidth,
+        contentHeight,
+      );
     } else if (layoutMode === "4cards" || layoutMode === "4cards-portrait") {
       const tlStage = editorStageRefs.current["top-left"];
       const trStage = editorStageRefs.current["top-right"];
       const blStage = editorStageRefs.current["bottom-left"];
       const brStage = editorStageRefs.current["bottom-right"];
-      
+
       if (!tlStage || !trStage || !blStage || !brStage) return;
 
       const tlCanvas = await tlStage.toCanvas({ pixelRatio: multiplier });
@@ -558,26 +602,44 @@ function App() {
       const blCanvas = await blStage.toCanvas({ pixelRatio: multiplier });
       const brCanvas = await brStage.toCanvas({ pixelRatio: multiplier });
 
-      const cardWidth = highResWidth / 2;
-      const cardHeight = highResHeight / 2;
+      const cardWidth = contentWidth / 2;
+      const cardHeight = contentHeight / 2;
 
-      ctx.drawImage(tlCanvas, 0, 0, cardWidth, cardHeight);
-      ctx.drawImage(trCanvas, cardWidth, 0, cardWidth, cardHeight);
-      ctx.drawImage(blCanvas, 0, cardHeight, cardWidth, cardHeight);
-      ctx.drawImage(brCanvas, cardWidth, cardHeight, cardWidth, cardHeight);
+      ctx.drawImage(tlCanvas, marginLeft, marginTop, cardWidth, cardHeight);
+      ctx.drawImage(
+        trCanvas,
+        marginLeft + cardWidth,
+        marginTop,
+        cardWidth,
+        cardHeight,
+      );
+      ctx.drawImage(
+        blCanvas,
+        marginLeft,
+        marginTop + cardHeight,
+        cardWidth,
+        cardHeight,
+      );
+      ctx.drawImage(
+        brCanvas,
+        marginLeft + cardWidth,
+        marginTop + cardHeight,
+        cardWidth,
+        cardHeight,
+      );
     } else {
       // Single layout
       const stage = editorRef.current;
       if (!stage) return;
 
       const canvas = await stage.toCanvas({ pixelRatio: multiplier });
-      ctx.drawImage(canvas, 0, 0, highResWidth, highResHeight);
+      ctx.drawImage(canvas, marginLeft, marginTop, contentWidth, contentHeight);
     }
 
     // Replace the editor content with high-res canvas for printing
     printContainer.innerHTML = "";
     printContainer.appendChild(printCanvas);
-  }, [layoutMode]);
+  }, [layoutMode, canvasMargins]);
 
   // State to force editor re-render after print
   const [printVersion, setPrintVersion] = useState(0);
@@ -587,7 +649,7 @@ function App() {
     onBeforePrint: preparePrintContent,
     onAfterPrint: () => {
       // Force React to re-render the editor by updating state
-      setPrintVersion(v => v + 1);
+      setPrintVersion((v) => v + 1);
     },
     documentTitle: "Image Print",
     pageStyle: `
@@ -663,6 +725,10 @@ function App() {
               onStageReady={(stage) => {
                 editorStageRefs.current["top-left"] = stage;
               }}
+              marginTop={canvasMargins.top}
+              marginBottom={canvasMargins.bottom}
+              marginLeft={canvasMargins.left}
+              marginRight={canvasMargins.right}
             />
           </div>
           <div
@@ -683,6 +749,10 @@ function App() {
               onStageReady={(stage) => {
                 editorStageRefs.current["top-right"] = stage;
               }}
+              marginTop={canvasMargins.top}
+              marginBottom={canvasMargins.bottom}
+              marginLeft={canvasMargins.left}
+              marginRight={canvasMargins.right}
             />
           </div>
         </div>
@@ -717,6 +787,10 @@ function App() {
               onStageReady={(stage) => {
                 editorStageRefs.current["top-left"] = stage;
               }}
+              marginTop={canvasMargins.top}
+              marginBottom={0}
+              marginLeft={canvasMargins.left}
+              marginRight={0}
             />
           </div>
           <div
@@ -737,6 +811,10 @@ function App() {
               onStageReady={(stage) => {
                 editorStageRefs.current["top-right"] = stage;
               }}
+              marginTop={canvasMargins.top}
+              marginBottom={0}
+              marginLeft={0}
+              marginRight={canvasMargins.right}
             />
           </div>
           <div
@@ -757,6 +835,10 @@ function App() {
               onStageReady={(stage) => {
                 editorStageRefs.current["bottom-left"] = stage;
               }}
+              marginTop={0}
+              marginBottom={canvasMargins.bottom}
+              marginLeft={canvasMargins.left}
+              marginRight={0}
             />
           </div>
           <div
@@ -777,6 +859,10 @@ function App() {
               onStageReady={(stage) => {
                 editorStageRefs.current["bottom-right"] = stage;
               }}
+              marginTop={0}
+              marginBottom={canvasMargins.bottom}
+              marginLeft={0}
+              marginRight={canvasMargins.right}
             />
           </div>
         </div>
@@ -811,6 +897,10 @@ function App() {
               onStageReady={(stage) => {
                 editorStageRefs.current["top-left"] = stage;
               }}
+              marginTop={canvasMargins.top}
+              marginBottom={0}
+              marginLeft={canvasMargins.left}
+              marginRight={0}
             />
           </div>
           <div
@@ -831,6 +921,10 @@ function App() {
               onStageReady={(stage) => {
                 editorStageRefs.current["top-right"] = stage;
               }}
+              marginTop={canvasMargins.top}
+              marginBottom={0}
+              marginLeft={0}
+              marginRight={canvasMargins.right}
             />
           </div>
           <div
@@ -851,6 +945,10 @@ function App() {
               onStageReady={(stage) => {
                 editorStageRefs.current["bottom-left"] = stage;
               }}
+              marginTop={0}
+              marginBottom={canvasMargins.bottom}
+              marginLeft={canvasMargins.left}
+              marginRight={0}
             />
           </div>
           <div
@@ -871,6 +969,10 @@ function App() {
               onStageReady={(stage) => {
                 editorStageRefs.current["bottom-right"] = stage;
               }}
+              marginTop={0}
+              marginBottom={canvasMargins.bottom}
+              marginLeft={0}
+              marginRight={canvasMargins.right}
             />
           </div>
         </div>
@@ -888,6 +990,10 @@ function App() {
         onStageReady={(stage) => {
           editorRef.current = stage;
         }} // Set editorRef to the Stage
+        marginTop={canvasMargins.top}
+        marginBottom={canvasMargins.bottom}
+        marginLeft={canvasMargins.left}
+        marginRight={canvasMargins.right}
       />
     );
   }, [
@@ -898,6 +1004,7 @@ function App() {
     onQrCodeDragEnd,
     triggerFileInput,
     printVersion,
+    canvasMargins,
   ]);
 
   return (
@@ -931,12 +1038,16 @@ function App() {
           deleteTemplate={deleteTemplate}
           fileInputRef={fileInputRef} // Pass fileInputRef to Controls
           onRemoveImage={handleRemoveImage}
+          // Canvas margin state and handlers
+          canvasMargins={canvasMargins}
+          onCanvasMarginTopChange={handleCanvasMarginTopChange}
+          onCanvasMarginBottomChange={handleCanvasMarginBottomChange}
+          onCanvasMarginLeftChange={handleCanvasMarginLeftChange}
+          onCanvasMarginRightChange={handleCanvasMarginRightChange}
         />
       </div>
       <div className="editor-panel">
-        <div ref={printContentRef}>
-          {editorPanelContent}
-        </div>
+        <div ref={printContentRef}>{editorPanelContent}</div>
       </div>
     </div>
   );

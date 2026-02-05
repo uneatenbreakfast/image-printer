@@ -38,6 +38,10 @@ interface EditorProps {
   canvasWidth: number;
   canvasHeight: number;
   onStageReady?: (stage: Konva.Stage) => void;
+  marginTop?: number;
+  marginBottom?: number;
+  marginLeft?: number;
+  marginRight?: number;
 }
 
 const Editor: React.FC<EditorProps> = ({
@@ -55,29 +59,40 @@ const Editor: React.FC<EditorProps> = ({
   canvasWidth,
   canvasHeight,
   onStageReady,
+  marginTop = 0,
+  marginBottom = 0,
+  marginLeft = 0,
+  marginRight = 0,
 }) => {
   const [image] = useImage(imageDataUrl || '');
   const imageRef = useRef<any>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
 
+  // Calculate available area after margins
+  const availableWidth = canvasWidth - marginLeft - marginRight;
+  const availableHeight = canvasHeight - marginTop - marginBottom;
+  const centerX = marginLeft + availableWidth / 2;
+  const centerY = marginTop + availableHeight / 2;
+
+  // Calculate image dimensions to fit within available canvas area
   useEffect(() => {
     if (image) {
       const aspectRatio = image.width / image.height;
-      let newWidth = canvasWidth;
-      let newHeight = canvasWidth / aspectRatio;
+      let newWidth = availableWidth;
+      let newHeight = availableWidth / aspectRatio;
 
-      if (newHeight > canvasHeight) {
-        newHeight = canvasHeight;
-        newWidth = canvasHeight * aspectRatio;
+      if (newHeight > availableHeight) {
+        newHeight = availableHeight;
+        newWidth = availableHeight * aspectRatio;
       }
       setImageDimensions({ width: newWidth, height: newHeight });
       if (imageRef.current) {
-        imageRef.current.x(canvasWidth / 2);
-        imageRef.current.y(canvasHeight / 2);
+        imageRef.current.x(centerX);
+        imageRef.current.y(centerY);
       }
     }
-  }, [image, canvasWidth, canvasHeight]);
+  }, [image, availableWidth, availableHeight, centerX, centerY]);
 
   useEffect(() => {
     if (onStageReady && stageRef.current) {
@@ -112,10 +127,10 @@ const Editor: React.FC<EditorProps> = ({
           {/* Clipped Group for the image */}
           <Group
             clipFunc={(ctx: SceneContext) => {
-              const rectX = borderThickness;
-              const rectY = borderThickness;
-              const rectWidth = canvasWidth - borderThickness * 2;
-              const rectHeight = canvasHeight - borderThickness * 2;
+              const rectX = marginLeft + borderThickness;
+              const rectY = marginTop + borderThickness;
+              const rectWidth = availableWidth - borderThickness * 2;
+              const rectHeight = availableHeight - borderThickness * 2;
               const radius = Math.max(0, cornerRadius);
 
               ctx.beginPath();
@@ -135,8 +150,8 @@ const Editor: React.FC<EditorProps> = ({
               <KonvaImage
                 ref={imageRef}
                 image={image}
-                x={canvasWidth / 2}
-                y={canvasHeight / 2}
+                x={centerX}
+                y={centerY}
                 width={imageDimensions.width}
                 height={imageDimensions.height}
                 draggable
@@ -160,7 +175,7 @@ const Editor: React.FC<EditorProps> = ({
               fontFamily={textItem.fontFamily}
               fill={textItem.fill}
               fontStyle={textItem.fontStyle || 'normal'}
-              width={canvasWidth - textItem.x - 20} // Allow text to wrap within canvas bounds
+              width={canvasWidth - marginLeft - marginRight - textItem.x - 20}
               lineHeight={1.2}
               draggable
               onDragEnd={(e) => {

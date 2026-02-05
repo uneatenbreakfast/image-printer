@@ -69,6 +69,17 @@ interface ControlsProps {
   deleteTemplate: (name: string) => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   onRemoveImage: () => void;
+  // Canvas margin state and handlers
+  canvasMargins: {
+    top: number;
+    bottom: number;
+    left: number;
+    right: number;
+  };
+  onCanvasMarginTopChange: (margin: number) => void;
+  onCanvasMarginBottomChange: (margin: number) => void;
+  onCanvasMarginLeftChange: (margin: number) => void;
+  onCanvasMarginRightChange: (margin: number) => void;
 }
 
 const Controls: React.FC<ControlsProps> = ({
@@ -97,6 +108,11 @@ const Controls: React.FC<ControlsProps> = ({
   deleteTemplate,
   fileInputRef,
   onRemoveImage,
+  canvasMargins,
+  onCanvasMarginTopChange,
+  onCanvasMarginBottomChange,
+  onCanvasMarginLeftChange,
+  onCanvasMarginRightChange,
 }) => {
   const [newTemplateName, setNewTemplateName] = useState<string>('');
   const [qrCodeUrlInput, setQrCodeUrlInput] = useState<string>('https://example.com'); // State for QR URL input
@@ -253,6 +269,50 @@ const Controls: React.FC<ControlsProps> = ({
           <SketchPicker
             color={activeState.borderColor}
             onChange={(color) => onBorderColorChange(color.hex)}
+          />
+        </div>
+      </div>
+
+      <div className="control-group">
+        <h3>Canvas Margin Controls</h3>
+        <div>
+          <label>Top: {canvasMargins.top}px</label>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={canvasMargins.top}
+            onChange={(e) => onCanvasMarginTopChange(Number(e.target.value))}
+          />
+        </div>
+        <div>
+          <label>Bottom: {canvasMargins.bottom}px</label>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={canvasMargins.bottom}
+            onChange={(e) => onCanvasMarginBottomChange(Number(e.target.value))}
+          />
+        </div>
+        <div>
+          <label>Left: {canvasMargins.left}px</label>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={canvasMargins.left}
+            onChange={(e) => onCanvasMarginLeftChange(Number(e.target.value))}
+          />
+        </div>
+        <div>
+          <label>Right: {canvasMargins.right}px</label>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={canvasMargins.right}
+            onChange={(e) => onCanvasMarginRightChange(Number(e.target.value))}
           />
         </div>
       </div>

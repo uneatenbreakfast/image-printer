@@ -272,3 +272,28 @@ button:hover {
   display: inline-block;
 }
 
+/* Alternating rainbow border for canvas - 20px thick with 1px alternating colors */
+.alternating-border {
+  box-shadow: 
+    0 0 0 1px #ff0000,
+    0 0 0 2px #ff7f00,
+    0 0 0 3px #ffff00,
+    0 0 0 4px #00ff00,
+    0 0 0 5px #0000ff,
+    0 0 0 6px #4b0082,
+    0 0 0 7px #9400d3,
+    0 0 0 8px #ff1493,
+    0 0 0 9px #00ffff,
+    0 0 0 10px #ff00ff,
+    0 0 0 11px #ffd700,
+    0 0 0 12px #32cd32,
+    0 0 0 13px #ff4500,
+    0 0 0 14px #1e90ff,
+    0 0 0 15px #ff69b4,
+    0 0 0 16px #00fa9a,
+    0 0 0 17px #da70d6,
+    0 0 0 18px #ffa500,
+    0 0 0 19px #00ced1,
+    0 0 0 20px #ff6347;
+}
+
