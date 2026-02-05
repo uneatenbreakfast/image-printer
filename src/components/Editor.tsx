@@ -26,7 +26,10 @@ interface QrCodeElement {
 interface EditorProps {
   imageDataUrl: string | null;
   borderColor: string;
-  borderThickness: number;
+  borderThicknessTop: number;
+  borderThicknessBottom: number;
+  borderThicknessLeft: number;
+  borderThicknessRight: number;
   cornerRadius: number;
   texts: TextElement[];
   qrCodes: QrCodeElement[];
@@ -47,7 +50,10 @@ interface EditorProps {
 const Editor: React.FC<EditorProps> = ({
   imageDataUrl,
   borderColor,
-  borderThickness,
+  borderThicknessTop,
+  borderThicknessBottom,
+  borderThicknessLeft,
+  borderThicknessRight,
   cornerRadius,
   texts,
   qrCodes,
@@ -112,25 +118,51 @@ const Editor: React.FC<EditorProps> = ({
           {/* Background color for empty areas */}
           <Rect x={0} y={0} width={canvasWidth} height={canvasHeight} fill="#ffffff" />
 
-          {/* Border Rect - drawn behind the clipped group */}
-          {borderThickness > 0 && (
+          {/* Border Rects - drawn behind the clipped group */}
+          {borderThicknessTop > 0 && (
             <Rect
               x={0}
               y={0}
               width={canvasWidth}
+              height={borderThicknessTop}
+              fill={borderColor}
+            />
+          )}
+          {borderThicknessBottom > 0 && (
+            <Rect
+              x={0}
+              y={canvasHeight - borderThicknessBottom}
+              width={canvasWidth}
+              height={borderThicknessBottom}
+              fill={borderColor}
+            />
+          )}
+          {borderThicknessLeft > 0 && (
+            <Rect
+              x={0}
+              y={0}
+              width={borderThicknessLeft}
               height={canvasHeight}
               fill={borderColor}
-              cornerRadius={0}
+            />
+          )}
+          {borderThicknessRight > 0 && (
+            <Rect
+              x={canvasWidth - borderThicknessRight}
+              y={0}
+              width={borderThicknessRight}
+              height={canvasHeight}
+              fill={borderColor}
             />
           )}
 
           {/* Clipped Group for the image */}
           <Group
             clipFunc={(ctx: SceneContext) => {
-              const rectX = marginLeft + borderThickness;
-              const rectY = marginTop + borderThickness;
-              const rectWidth = availableWidth - borderThickness * 2;
-              const rectHeight = availableHeight - borderThickness * 2;
+              const rectX = marginLeft + borderThicknessLeft;
+              const rectY = marginTop + borderThicknessTop;
+              const rectWidth = availableWidth - borderThicknessLeft - borderThicknessRight;
+              const rectHeight = availableHeight - borderThicknessTop - borderThicknessBottom;
               const radius = Math.max(0, cornerRadius);
 
               ctx.beginPath();

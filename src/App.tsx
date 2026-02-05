@@ -33,7 +33,10 @@ interface QrCodeElement {
 interface EditorState {
   imageDataUrl: string | null;
   borderColor: string;
-  borderThickness: number;
+  borderThicknessTop: number;
+  borderThicknessBottom: number;
+  borderThicknessLeft: number;
+  borderThicknessRight: number;
   cornerRadius: number;
   texts: TextElement[];
   qrCodes: QrCodeElement[]; // New property for QR codes
@@ -48,7 +51,10 @@ interface EditorState {
 const initialEditorState: EditorState = {
   imageDataUrl: null,
   borderColor: "#000000",
-  borderThickness: 0,
+  borderThicknessTop: 0,
+  borderThicknessBottom: 0,
+  borderThicknessLeft: 0,
+  borderThicknessRight: 0,
   cornerRadius: 0,
   texts: [],
   qrCodes: [], // Initialize qrCodes
@@ -64,7 +70,10 @@ interface Template {
   name: string;
   // All properties from EditorState except imageDataUrl, scale, and rotation
   borderColor: string;
-  borderThickness: number;
+  borderThicknessTop: number;
+  borderThicknessBottom: number;
+  borderThicknessLeft: number;
+  borderThicknessRight: number;
   cornerRadius: number;
   defaultTextContent: string;
   defaultTextFontSize: number;
@@ -207,9 +216,43 @@ function App() {
     [setActiveState],
   );
 
-  const handleBorderThicknessChange = useCallback(
+  const handleBorderThicknessTopChange = useCallback(
     (thickness: number) => {
-      setActiveState((prev) => ({ ...prev, borderThickness: thickness }));
+      setActiveState((prev) => ({ ...prev, borderThicknessTop: thickness }));
+    },
+    [setActiveState],
+  );
+
+  const handleBorderThicknessBottomChange = useCallback(
+    (thickness: number) => {
+      setActiveState((prev) => ({ ...prev, borderThicknessBottom: thickness }));
+    },
+    [setActiveState],
+  );
+
+  const handleBorderThicknessLeftChange = useCallback(
+    (thickness: number) => {
+      setActiveState((prev) => ({ ...prev, borderThicknessLeft: thickness }));
+    },
+    [setActiveState],
+  );
+
+  const handleBorderThicknessRightChange = useCallback(
+    (thickness: number) => {
+      setActiveState((prev) => ({ ...prev, borderThicknessRight: thickness }));
+    },
+    [setActiveState],
+  );
+
+  const handleBorderThicknessAllChange = useCallback(
+    (thickness: number) => {
+      setActiveState((prev) => ({
+        ...prev,
+        borderThicknessTop: thickness,
+        borderThicknessBottom: thickness,
+        borderThicknessLeft: thickness,
+        borderThicknessRight: thickness,
+      }));
     },
     [setActiveState],
   );
@@ -422,7 +465,9 @@ function App() {
       );
 
       // Draw border (simplified for thumbnail)
-      if (state.borderThickness > 0) {
+      const hasBorder = state.borderThicknessTop > 0 || state.borderThicknessBottom > 0 ||
+                        state.borderThicknessLeft > 0 || state.borderThicknessRight > 0;
+      if (hasBorder) {
         layer.add(
           new Konva.Rect({
             x: 0,
@@ -430,7 +475,12 @@ function App() {
             width: THUMBNAIL_SIZE,
             height: THUMBNAIL_SIZE,
             fill: state.borderColor,
-            cornerRadius: state.cornerRadius + state.borderThickness,
+            cornerRadius: state.cornerRadius + Math.max(
+              state.borderThicknessTop,
+              state.borderThicknessBottom,
+              state.borderThicknessLeft,
+              state.borderThicknessRight
+            ),
           }),
         );
       }
@@ -494,7 +544,10 @@ function App() {
       setActiveState((prev) => ({
         ...prev,
         borderColor: template.borderColor,
-        borderThickness: template.borderThickness,
+        borderThicknessTop: template.borderThicknessTop,
+        borderThicknessBottom: template.borderThicknessBottom,
+        borderThicknessLeft: template.borderThicknessLeft,
+        borderThicknessRight: template.borderThicknessRight,
         cornerRadius: template.cornerRadius,
         defaultTextContent: template.defaultTextContent,
         defaultTextFontSize: template.defaultTextFontSize,
@@ -1013,7 +1066,11 @@ function App() {
         <Controls
           onImageUpload={handleImageUpload}
           onBorderColorChange={handleBorderColorChange}
-          onBorderThicknessChange={handleBorderThicknessChange}
+          onBorderThicknessTopChange={handleBorderThicknessTopChange}
+          onBorderThicknessBottomChange={handleBorderThicknessBottomChange}
+          onBorderThicknessLeftChange={handleBorderThicknessLeftChange}
+          onBorderThicknessRightChange={handleBorderThicknessRightChange}
+          onBorderThicknessAllChange={handleBorderThicknessAllChange}
           onCornerRadiusChange={handleCornerRadiusChange}
           onScaleChange={handleScaleChange}
           onRotationChange={handleRotationChange}

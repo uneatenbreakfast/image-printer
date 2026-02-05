@@ -18,7 +18,10 @@ interface TextElement {
 interface EditorState {
   imageDataUrl: string | null;
   borderColor: string;
-  borderThickness: number;
+  borderThicknessTop: number;
+  borderThicknessBottom: number;
+  borderThicknessLeft: number;
+  borderThicknessRight: number;
   cornerRadius: number;
   texts: any[];
   qrCodes: any[];
@@ -32,7 +35,10 @@ interface EditorState {
 interface Template {
   name: string;
   borderColor: string;
-  borderThickness: number;
+  borderThicknessTop: number;
+  borderThicknessBottom: number;
+  borderThicknessLeft: number;
+  borderThicknessRight: number;
   cornerRadius: number;
   defaultTextContent: string;
   defaultTextFontSize: number;
@@ -44,7 +50,10 @@ interface Template {
 interface ControlsProps {
   onImageUpload: (imageDataUrl: string) => void;
   onBorderColorChange: (color: string) => void;
-  onBorderThicknessChange: (thickness: number) => void;
+  onBorderThicknessTopChange: (thickness: number) => void;
+  onBorderThicknessBottomChange: (thickness: number) => void;
+  onBorderThicknessLeftChange: (thickness: number) => void;
+  onBorderThicknessRightChange: (thickness: number) => void;
   onCornerRadiusChange: (radius: number) => void;
   onScaleChange: (scale: number) => void;
   onRotationChange: (rotation: number) => void;
@@ -80,12 +89,16 @@ interface ControlsProps {
   onCanvasMarginBottomChange: (margin: number) => void;
   onCanvasMarginLeftChange: (margin: number) => void;
   onCanvasMarginRightChange: (margin: number) => void;
+  onBorderThicknessAllChange: (thickness: number) => void;
 }
 
 const Controls: React.FC<ControlsProps> = ({
   onImageUpload,
   onBorderColorChange,
-  onBorderThicknessChange,
+  onBorderThicknessTopChange,
+  onBorderThicknessBottomChange,
+  onBorderThicknessLeftChange,
+  onBorderThicknessRightChange,
   onCornerRadiusChange,
   onScaleChange,
   onRotationChange,
@@ -113,9 +126,11 @@ const Controls: React.FC<ControlsProps> = ({
   onCanvasMarginBottomChange,
   onCanvasMarginLeftChange,
   onCanvasMarginRightChange,
+  onBorderThicknessAllChange,
 }) => {
   const [newTemplateName, setNewTemplateName] = useState<string>('');
   const [qrCodeUrlInput, setQrCodeUrlInput] = useState<string>('https://example.com'); // State for QR URL input
+  const [showIndividualBorders, setShowIndividualBorders] = useState(false);
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -245,15 +260,77 @@ const Controls: React.FC<ControlsProps> = ({
       <div className="control-group">
         <h3>Border Controls</h3>
         <div>
-          <label>Thickness: {activeState.borderThickness}px</label>
+          <label>All Borders: {
+            Math.round(
+              (activeState.borderThicknessTop +
+               activeState.borderThicknessBottom +
+               activeState.borderThicknessLeft +
+               activeState.borderThicknessRight) / 4
+            )
+          }px</label>
           <input
             type="range"
             min="0"
             max="50"
-            value={activeState.borderThickness}
-            onChange={(e) => onBorderThicknessChange(Number(e.target.value))}
+            value={Math.round(
+              (activeState.borderThicknessTop +
+               activeState.borderThicknessBottom +
+               activeState.borderThicknessLeft +
+               activeState.borderThicknessRight) / 4
+            )}
+            onChange={(e) => onBorderThicknessAllChange(Number(e.target.value))}
           />
         </div>
+        <button
+          onClick={() => setShowIndividualBorders(!showIndividualBorders)}
+          style={{ marginTop: '10px', marginBottom: '10px', width: 'auto' }}
+        >
+          {showIndividualBorders ? 'Hide' : 'Adjust'} Individual Borders
+        </button>
+        {showIndividualBorders && (
+          <>
+            <div>
+              <label>Top Thickness: {activeState.borderThicknessTop}px</label>
+              <input
+                type="range"
+                min="0"
+                max="50"
+                value={activeState.borderThicknessTop}
+                onChange={(e) => onBorderThicknessTopChange(Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label>Bottom Thickness: {activeState.borderThicknessBottom}px</label>
+              <input
+                type="range"
+                min="0"
+                max="50"
+                value={activeState.borderThicknessBottom}
+                onChange={(e) => onBorderThicknessBottomChange(Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label>Left Thickness: {activeState.borderThicknessLeft}px</label>
+              <input
+                type="range"
+                min="0"
+                max="50"
+                value={activeState.borderThicknessLeft}
+                onChange={(e) => onBorderThicknessLeftChange(Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label>Right Thickness: {activeState.borderThicknessRight}px</label>
+              <input
+                type="range"
+                min="0"
+                max="50"
+                value={activeState.borderThicknessRight}
+                onChange={(e) => onBorderThicknessRightChange(Number(e.target.value))}
+              />
+            </div>
+          </>
+        )}
         <div>
           <label>Corner Radius: {activeState.cornerRadius}px</label>
           <input
