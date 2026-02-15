@@ -1,73 +1,70 @@
-# React + TypeScript + Vite
+# Image Printer App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is a standalone-based static-js image printer app that allows users to create and print images with text, borders, and QR codes.
 
-Currently, two official plugins are available:
+Used to create templates for printing on the Cannon Selphy-CP1500 printer.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## React Compiler
+- Add images
+  - Scales
+  - Rotation
+- Add text
+- Add QR codes
+- Add borders
+  - Border thickness
+  - Border color
+  - Corner radius
+- Add margins
+- Saves and loads templates
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Technologies Used
 
-## Expanding the ESLint configuration
+- **React**: A JavaScript library for building user interfaces.
+- **TypeScript**: A strongly typed superset of JavaScript that compiles to plain JavaScript.
+- **Vite**: A fast build tool that provides an excellent developer experience.
+- **Bun**: A fast all-in-one JavaScript runtime.
+- **Konva & React Konva**: For high-performance 2D transformations on canvas.
+- **QR Code**: For generating QR codes.
+- **React Color**: A collection of color pickers from Sketch, Photoshop, Chrome, Github, Twitter & more.
+- **React To Print**: For printing React components in the browser.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Setup and Running the Project
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+To set up and run this project locally, follow these steps:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+1.  **Clone the repository:**
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+    ```bash
+    git clone [repository-url]
+    cd image-printer
+    ```
+
+2.  **Install dependencies:**
+
+    ```bash
+    bun install
+    ```
+
+3.  **Run the development server:**
+
+    ```bash
+    bun dev
+    ```
+
+    The application will be available at `http://localhost:5173`.
+
+4.  **Build for production:**
+
+    ```bash
+    bun run build
+    ```
+
+5.  **Preview the production build:**
+    ```bash
+    bun run preview
+    ```
+
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
