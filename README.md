@@ -65,6 +65,6 @@ To set up and run this project locally, follow these steps:
     bun run preview
     ```
 
-```
+## Github Page
 
-```
+https://uneatenbreakfast.github.io/image-printer/
