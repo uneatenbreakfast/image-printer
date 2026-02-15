@@ -47,6 +47,16 @@ interface Template {
   thumbnailDataUrl?: string; // New optional property for thumbnail
 }
 
+// Comprehensive template interface
+interface ComprehensiveTemplate {
+  name: string;
+  layoutMode: 'current' | '2x3' | '4cards' | '4cards-portrait';
+  canvasMargins: { top: number; bottom: number; left: number; right: number };
+  editorStates: Record<'top-left' | 'top-right' | 'bottom-left' | 'bottom-right', EditorState>;
+  thumbnailDataUrl?: string;
+  createdAt: string;
+}
+
 interface ControlsProps {
   onImageUpload: (imageDataUrl: string) => void;
   onBorderColorChange: (color: string) => void;
@@ -90,6 +100,11 @@ interface ControlsProps {
   onCanvasMarginLeftChange: (margin: number) => void;
   onCanvasMarginRightChange: (margin: number) => void;
   onBorderThicknessAllChange: (thickness: number) => void;
+  // Comprehensive template handlers
+  comprehensiveTemplates: ComprehensiveTemplate[];
+  saveComprehensiveTemplate: (name: string) => void;
+  loadComprehensiveTemplate: (template: ComprehensiveTemplate) => void;
+  deleteComprehensiveTemplate: (name: string) => void;
 }
 
 const Controls: React.FC<ControlsProps> = ({
@@ -127,8 +142,14 @@ const Controls: React.FC<ControlsProps> = ({
   onCanvasMarginLeftChange,
   onCanvasMarginRightChange,
   onBorderThicknessAllChange,
+  // Comprehensive template handlers
+  comprehensiveTemplates,
+  saveComprehensiveTemplate,
+  loadComprehensiveTemplate,
+  deleteComprehensiveTemplate,
 }) => {
   const [newTemplateName, setNewTemplateName] = useState<string>('');
+  const [newComprehensiveTemplateName, setNewComprehensiveTemplateName] = useState<string>('');
   const [qrCodeUrlInput, setQrCodeUrlInput] = useState<string>('https://example.com'); // State for QR URL input
   const [showIndividualBorders, setShowIndividualBorders] = useState(false);
 
@@ -528,6 +549,58 @@ const Controls: React.FC<ControlsProps> = ({
                   onClick={(e) => {
                     e.stopPropagation(); // Prevent loading template when deleting
                     deleteTemplate(t.name);
+                  }}
+                  title={`Delete ${t.name}`}
+                >
+                  &times;
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="control-group">
+        <h3>Comprehensive Templates (Save Everything)</h3>
+        <div>
+          <label>Template Name:</label>
+          <input
+            type="text"
+            value={newComprehensiveTemplateName}
+            onChange={(e) => setNewComprehensiveTemplateName(e.target.value)}
+            placeholder="Enter comprehensive template name"
+          />
+          <button 
+            onClick={() => saveComprehensiveTemplate(newComprehensiveTemplateName)} 
+            style={{ marginTop: '10px' }}
+          >
+            Save Everything
+          </button>
+        </div>
+        <div style={{ marginTop: '20px' }}>
+          <label>Saved Comprehensive Templates:</label>
+          <div className="template-thumbnail-grid">
+            {comprehensiveTemplates.map(t => (
+              <div
+                key={t.name}
+                className="template-thumbnail-item"
+                onClick={() => loadComprehensiveTemplate(t)}
+                title={`${t.name} (${t.layoutMode}) - ${new Date(t.createdAt).toLocaleDateString()}`}
+              >
+                {t.thumbnailDataUrl ? (
+                  <img src={t.thumbnailDataUrl} alt={t.name} />
+                ) : (
+                  <div className="no-thumbnail">No Preview</div>
+                )}
+                <span className="template-name">{t.name}</span>
+                <span className="template-info" style={{ fontSize: '0.7em', color: '#666' }}>
+                  {t.layoutMode}
+                </span>
+                <button
+                  className="delete-template-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteComprehensiveTemplate(t.name);
                   }}
                   title={`Delete ${t.name}`}
                 >

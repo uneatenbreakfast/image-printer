@@ -82,6 +82,16 @@ interface Template {
   thumbnailDataUrl?: string; // New optional property for thumbnail
 }
 
+// Interface for comprehensive templates that save EVERYTHING
+interface ComprehensiveTemplate {
+  name: string;
+  layoutMode: "current" | "2x3" | "4cards" | "4cards-portrait";
+  canvasMargins: { top: number; bottom: number; left: number; right: number };
+  editorStates: Record<"top-left" | "top-right" | "bottom-left" | "bottom-right", EditorState>;
+  thumbnailDataUrl?: string;
+  createdAt: string;
+}
+
 function App() {
   const [layoutMode, setLayoutMode] = useState<
     "current" | "2x3" | "4cards" | "4cards-portrait"
@@ -128,6 +138,26 @@ function App() {
       console.error("Failed to save templates to localStorage:", error);
     }
   }, [templates]);
+
+  // Comprehensive templates state with localStorage persistence
+  const [comprehensiveTemplates, setComprehensiveTemplates] = useState<ComprehensiveTemplate[]>(() => {
+    try {
+      const saved = localStorage.getItem("imagePrinterComprehensiveTemplates");
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.error("Failed to parse comprehensive templates:", error);
+      return [];
+    }
+  });
+
+  // Save comprehensive templates to localStorage
+  React.useEffect(() => {
+    try {
+      localStorage.setItem("imagePrinterComprehensiveTemplates", JSON.stringify(comprehensiveTemplates));
+    } catch (error) {
+      console.error("Failed to save comprehensive templates:", error);
+    }
+  }, [comprehensiveTemplates]);
 
   // Update combined canvas dimensions when layout mode changes
   React.useEffect(() => {
@@ -571,6 +601,74 @@ function App() {
     },
     [setTemplates],
   );
+
+  // Comprehensive template handlers
+  const saveComprehensiveTemplate = useCallback(async (name: string) => {
+    if (!name) {
+      alert("Template name cannot be empty.");
+      return;
+    }
+    
+    // Generate thumbnail from top-left editor or current active editor
+    const thumbnailDataUrl = await generateThumbnail(editorStates["top-left"]);
+    
+    // Strip out imageDataUrl to reduce size (images must be re-uploaded when loading)
+    const editorStatesWithoutImages: Record<string, EditorState> = {};
+    (Object.keys(editorStates) as Array<keyof typeof editorStates>).forEach((key) => {
+      const { imageDataUrl, ...rest } = editorStates[key];
+      editorStatesWithoutImages[key] = rest as EditorState;
+    });
+    
+    const newTemplate: ComprehensiveTemplate = {
+      name,
+      layoutMode,
+      canvasMargins,
+      editorStates: editorStatesWithoutImages as Record<"top-left" | "top-right" | "bottom-left" | "bottom-right", EditorState>,
+      thumbnailDataUrl,
+      createdAt: new Date().toISOString(),
+    };
+    
+    setComprehensiveTemplates((prev) => {
+      const existingIndex = prev.findIndex((t) => t.name === name);
+      if (existingIndex > -1) {
+        const updated = [...prev];
+        updated[existingIndex] = newTemplate;
+        return updated;
+      }
+      return [...prev, newTemplate];
+    });
+  }, [layoutMode, canvasMargins, editorStates, setComprehensiveTemplates, generateThumbnail]);
+
+  const loadComprehensiveTemplate = useCallback((template: ComprehensiveTemplate) => {
+    setLayoutMode(template.layoutMode);
+    setCanvasMargins(template.canvasMargins);
+    
+    // Ensure imageDataUrl is null for all editor states (images not saved in templates)
+    const restoredEditorStates: Record<string, EditorState> = {};
+    (Object.keys(template.editorStates) as Array<keyof typeof template.editorStates>).forEach((key) => {
+      restoredEditorStates[key] = {
+        ...template.editorStates[key],
+        imageDataUrl: null, // Images must be re-uploaded
+      };
+    });
+    
+    setEditorStates(restoredEditorStates as Record<"top-left" | "top-right" | "bottom-left" | "bottom-right", EditorState>);
+    
+    // Also update active editor if needed based on layout
+    if (template.layoutMode !== "current") {
+      setActiveEditor("top-left");
+    }
+    
+    // Notify user that images need to be re-uploaded
+    alert(`Template "${template.name}" loaded. Please re-upload images as they are not saved in templates.`);
+  }, [setLayoutMode, setCanvasMargins, setEditorStates, setActiveEditor]);
+
+  const deleteComprehensiveTemplate = useCallback((name: string) => {
+    if (window.confirm(`Delete comprehensive template "${name}"?`)) {
+      setComprehensiveTemplates((prev) => prev.filter((t) => t.name !== name));
+    }
+  }, [setComprehensiveTemplates]);
+
   // High-resolution print preparation
   const preparePrintContent = useCallback(async () => {
     const printContainer = printContentRef.current;
@@ -1101,6 +1199,11 @@ function App() {
           onCanvasMarginBottomChange={handleCanvasMarginBottomChange}
           onCanvasMarginLeftChange={handleCanvasMarginLeftChange}
           onCanvasMarginRightChange={handleCanvasMarginRightChange}
+          // Comprehensive template handlers
+          comprehensiveTemplates={comprehensiveTemplates}
+          saveComprehensiveTemplate={saveComprehensiveTemplate}
+          loadComprehensiveTemplate={loadComprehensiveTemplate}
+          deleteComprehensiveTemplate={deleteComprehensiveTemplate}
         />
       </div>
       <div className="editor-panel">
