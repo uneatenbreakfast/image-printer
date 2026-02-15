@@ -392,20 +392,44 @@ function App() {
 
   // Canvas margin handlers (apply to entire canvas area)
   const handleCanvasMarginTopChange = useCallback((margin: number) => {
-    setCanvasMargins((prev) => ({ ...prev, top: margin }));
-  }, []);
+    const marginDelta = margin - canvasMargins.top;
+    setActiveState(prev => ({
+      ...prev,
+      texts: prev.texts.map(text => ({ ...text, y: text.y + marginDelta })),
+      qrCodes: prev.qrCodes.map(qr => ({ ...qr, y: qr.y + marginDelta })),
+    }));
+    setCanvasMargins(prev => ({ ...prev, top: margin }));
+  }, [canvasMargins.top, setActiveState]);
 
   const handleCanvasMarginBottomChange = useCallback((margin: number) => {
-    setCanvasMargins((prev) => ({ ...prev, bottom: margin }));
-  }, []);
+    const marginDelta = margin - canvasMargins.bottom;
+    setActiveState(prev => ({
+      ...prev,
+      texts: prev.texts.map(text => ({ ...text, y: text.y - marginDelta })),
+      qrCodes: prev.qrCodes.map(qr => ({ ...qr, y: qr.y - marginDelta })),
+    }));
+    setCanvasMargins(prev => ({ ...prev, bottom: margin }));
+  }, [canvasMargins.bottom, setActiveState]);
 
   const handleCanvasMarginLeftChange = useCallback((margin: number) => {
-    setCanvasMargins((prev) => ({ ...prev, left: margin }));
-  }, []);
+    const marginDelta = margin - canvasMargins.left;
+    setActiveState(prev => ({
+      ...prev,
+      texts: prev.texts.map(text => ({ ...text, x: text.x + marginDelta })),
+      qrCodes: prev.qrCodes.map(qr => ({ ...qr, x: qr.x + marginDelta })),
+    }));
+    setCanvasMargins(prev => ({ ...prev, left: margin }));
+  }, [canvasMargins.left, setActiveState]);
 
   const handleCanvasMarginRightChange = useCallback((margin: number) => {
-    setCanvasMargins((prev) => ({ ...prev, right: margin }));
-  }, []);
+    const marginDelta = margin - canvasMargins.right;
+setActiveState(prev => ({
+      ...prev,
+      texts: prev.texts.map(text => ({ ...text, x: text.x - marginDelta })),
+      qrCodes: prev.qrCodes.map(qr => ({ ...qr, x: qr.x - marginDelta })),
+    }));
+    setCanvasMargins(prev => ({ ...prev, right: margin }));
+  }, [canvasMargins.right, setActiveState]);
 
   const handleAddQrCode = useCallback(
     async (url: string) => {
