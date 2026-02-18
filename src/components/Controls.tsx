@@ -45,6 +45,7 @@ interface Template {
   defaultTextColor: string;
   texts: TextElement[];
   thumbnailDataUrl?: string; // New optional property for thumbnail
+  isDefault?: boolean;
 }
 
 // Comprehensive template interface
@@ -55,6 +56,7 @@ interface ComprehensiveTemplate {
   editorStates: Record<'top-left' | 'top-right' | 'bottom-left' | 'bottom-right', EditorState>;
   thumbnailDataUrl?: string;
   createdAt: string;
+  isDefault?: boolean;
 }
 
 interface ControlsProps {
@@ -544,16 +546,18 @@ const Controls: React.FC<ControlsProps> = ({
                 )}
                 <span className="template-name">{t.name}</span>
                 {/* Delete button for each template */}
-                <button
-                  className="delete-template-btn"
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent loading template when deleting
-                    deleteTemplate(t.name);
-                  }}
-                  title={`Delete ${t.name}`}
-                >
-                  &times;
-                </button>
+                {!t.isDefault && (
+                  <button
+                    className="delete-template-btn"
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent loading template when deleting
+                      deleteTemplate(t.name);
+                    }}
+                    title={`Delete ${t.name}`}
+                  >
+                    &times;
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -596,16 +600,18 @@ const Controls: React.FC<ControlsProps> = ({
                 <span className="template-info" style={{ fontSize: '0.7em', color: '#666' }}>
                   {t.layoutMode}
                 </span>
-                <button
-                  className="delete-template-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteComprehensiveTemplate(t.name);
-                  }}
-                  title={`Delete ${t.name}`}
-                >
-                  &times;
-                </button>
+                {!t.isDefault && (
+                  <button
+                    className="delete-template-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteComprehensiveTemplate(t.name);
+                    }}
+                    title={`Delete ${t.name}`}
+                  >
+                    &times;
+                  </button>
+                )}
               </div>
             ))}
           </div>

@@ -5,6 +5,10 @@ import "./App.css";
 import Editor from "./components/Editor";
 import Controls from "./components/Controls";
 import QRCode from "qrcode"; // Import qrcode library
+import { 
+  imagePrinterTemplatesDefault, 
+  imagePrinterComprehensiveTemplatesDefaults 
+} from "./defaultTemplates";
 
 const PRINT_ASPECT_RATIO_WIDTH = 600;
 const PRINT_ASPECT_RATIO_HEIGHT = 400;
@@ -80,6 +84,7 @@ interface Template {
   defaultTextColor: string;
   texts: TextElement[]; // Now saving text elements
   thumbnailDataUrl?: string; // New optional property for thumbnail
+  isDefault?: boolean;
 }
 
 // Interface for comprehensive templates that save EVERYTHING
@@ -90,7 +95,11 @@ interface ComprehensiveTemplate {
   editorStates: Record<"top-left" | "top-right" | "bottom-left" | "bottom-right", EditorState>;
   thumbnailDataUrl?: string;
   createdAt: string;
+  isDefault?: boolean;
 }
+
+const defaultTemplates: Template[] = JSON.parse(imagePrinterTemplatesDefault).map((t: any) => ({ ...t, isDefault: true }));
+const defaultComprehensiveTemplates: ComprehensiveTemplate[] = JSON.parse(imagePrinterComprehensiveTemplatesDefaults).map((t: any) => ({ ...t, isDefault: true }));
 
 function App() {
   const [layoutMode, setLayoutMode] = useState<
@@ -120,7 +129,7 @@ function App() {
     "bottom-right": initialEditorState,
   });
 
-  const [templates, setTemplates] = useState<Template[]>(() => {
+  const [userTemplates, setUserTemplates] = useState<Template[]>(() => {
     try {
       const saved = localStorage.getItem("imagePrinterTemplates");
       return saved ? JSON.parse(saved) : [];
@@ -130,17 +139,21 @@ function App() {
     }
   });
 
+  const templates = useMemo(() => {
+    return [...userTemplates, ...defaultTemplates];
+  }, [userTemplates]);
+
   // Save templates to localStorage whenever they change
   React.useEffect(() => {
     try {
-      localStorage.setItem("imagePrinterTemplates", JSON.stringify(templates));
+      localStorage.setItem("imagePrinterTemplates", JSON.stringify(userTemplates));
     } catch (error) {
       console.error("Failed to save templates to localStorage:", error);
     }
-  }, [templates]);
+  }, [userTemplates]);
 
   // Comprehensive templates state with localStorage persistence
-  const [comprehensiveTemplates, setComprehensiveTemplates] = useState<ComprehensiveTemplate[]>(() => {
+  const [userComprehensiveTemplates, setUserComprehensiveTemplates] = useState<ComprehensiveTemplate[]>(() => {
     try {
       const saved = localStorage.getItem("imagePrinterComprehensiveTemplates");
       return saved ? JSON.parse(saved) : [];
@@ -150,14 +163,18 @@ function App() {
     }
   });
 
+  const comprehensiveTemplates = useMemo(() => {
+    return [...userComprehensiveTemplates, ...defaultComprehensiveTemplates];
+  }, [userComprehensiveTemplates]);
+
   // Save comprehensive templates to localStorage
   React.useEffect(() => {
     try {
-      localStorage.setItem("imagePrinterComprehensiveTemplates", JSON.stringify(comprehensiveTemplates));
+      localStorage.setItem("imagePrinterComprehensiveTemplates", JSON.stringify(userComprehensiveTemplates));
     } catch (error) {
       console.error("Failed to save comprehensive templates:", error);
     }
-  }, [comprehensiveTemplates]);
+  }, [userComprehensiveTemplates]);
 
   // Update combined canvas dimensions when layout mode changes
   React.useEffect(() => {
@@ -580,17 +597,17 @@ setActiveState(prev => ({
         ...settingsToSave,
         thumbnailDataUrl,
       };
-      setTemplates((prev) => {
+      setUserTemplates((prev) => {
         const existingIndex = prev.findIndex((t) => t.name === name);
         if (existingIndex > -1) {
           const updatedTemplates = [...prev];
           updatedTemplates[existingIndex] = newTemplate;
           return updatedTemplates;
         }
-        return [...prev, newTemplate];
+        return [newTemplate, ...prev];
       });
     },
-    [activeState, setTemplates, generateThumbnail],
+    [activeState, setUserTemplates, generateThumbnail],
   );
 
   const loadTemplate = useCallback(
@@ -614,16 +631,22 @@ setActiveState(prev => ({
 
   const deleteTemplate = useCallback(
     (name: string) => {
+      const isDefault = defaultTemplates.some((t) => t.name === name);
+      if (isDefault) {
+        alert("Cannot delete default templates.");
+        return;
+      }
+
       if (
         window.confirm(`Are you sure you want to delete template "${name}"?`)
       ) {
-        setTemplates((prev) => {
+        setUserTemplates((prev) => {
           const updatedTemplates = prev.filter((t) => t.name !== name);
           return updatedTemplates;
         });
       }
     },
-    [setTemplates],
+    [setUserTemplates],
   );
 
   // Comprehensive template handlers
@@ -652,16 +675,16 @@ setActiveState(prev => ({
       createdAt: new Date().toISOString(),
     };
     
-    setComprehensiveTemplates((prev) => {
+    setUserComprehensiveTemplates((prev) => {
       const existingIndex = prev.findIndex((t) => t.name === name);
       if (existingIndex > -1) {
         const updated = [...prev];
         updated[existingIndex] = newTemplate;
         return updated;
       }
-      return [...prev, newTemplate];
+      return [newTemplate, ...prev];
     });
-  }, [layoutMode, canvasMargins, editorStates, setComprehensiveTemplates, generateThumbnail]);
+  }, [layoutMode, canvasMargins, editorStates, setUserComprehensiveTemplates, generateThumbnail]);
 
   const loadComprehensiveTemplate = useCallback((template: ComprehensiveTemplate) => {
     setLayoutMode(template.layoutMode);
@@ -688,10 +711,16 @@ setActiveState(prev => ({
   }, [setLayoutMode, setCanvasMargins, setEditorStates, setActiveEditor]);
 
   const deleteComprehensiveTemplate = useCallback((name: string) => {
-    if (window.confirm(`Delete comprehensive template "${name}"?`)) {
-      setComprehensiveTemplates((prev) => prev.filter((t) => t.name !== name));
+    const isDefault = defaultComprehensiveTemplates.some((t) => t.name === name);
+    if (isDefault) {
+      alert("Cannot delete default templates.");
+      return;
     }
-  }, [setComprehensiveTemplates]);
+
+    if (window.confirm(`Delete comprehensive template "${name}"?`)) {
+      setUserComprehensiveTemplates((prev) => prev.filter((t) => t.name !== name));
+    }
+  }, [setUserComprehensiveTemplates]);
 
   // High-resolution print preparation
   const preparePrintContent = useCallback(async () => {
