@@ -179,11 +179,11 @@ const Controls: React.FC<ControlsProps> = ({
     <div>
       <div className="control-group">
         <h3>Layout</h3>
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <button onClick={() => onLayoutChange('current')} disabled={layoutMode === 'current'}>Single</button>
-          <button onClick={() => onLayoutChange('2x3')} disabled={layoutMode === '2x3'}>2x3 Split</button>
-          <button onClick={() => onLayoutChange('4cards')} disabled={layoutMode === '4cards'}>4 Cards</button>
-          <button onClick={() => onLayoutChange('4cards-portrait')} disabled={layoutMode === '4cards-portrait'}>4 Cards Portrait</button>
+        <div className="button-group" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button className="layout-btn" onClick={() => onLayoutChange('current')} disabled={layoutMode === 'current'}>Single</button>
+          <button className="layout-btn" onClick={() => onLayoutChange('2x3')} disabled={layoutMode === '2x3'}>2x3 Split</button>
+          <button className="layout-btn" onClick={() => onLayoutChange('4cards')} disabled={layoutMode === '4cards'}>4 Cards</button>
+          <button className="layout-btn" onClick={() => onLayoutChange('4cards-portrait')} disabled={layoutMode === '4cards-portrait'}>4 Cards Portrait</button>
         </div>
       </div>
 
@@ -223,11 +223,11 @@ const Controls: React.FC<ControlsProps> = ({
             value={activeState.rotation}
             onChange={(e) => onRotationChange(Number(e.target.value))}
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
-            <button style={{ width: 'auto', flexGrow: 1, marginRight: '5px' }} onClick={() => onRotationChange(0)}>0°</button>
-            <button style={{ width: 'auto', flexGrow: 1, marginRight: '5px' }} onClick={() => onRotationChange(90)}>90°</button>
-            <button style={{ width: 'auto', flexGrow: 1, marginRight: '5px' }} onClick={() => onRotationChange(180)}>180°</button>
-            <button style={{ width: 'auto', flexGrow: 1 }} onClick={() => onRotationChange(270)}>270°</button>
+          <div className="button-group">
+            <button className="layout-btn" onClick={() => onRotationChange(0)}>0°</button>
+            <button className="layout-btn" onClick={() => onRotationChange(90)}>90°</button>
+            <button className="layout-btn" onClick={() => onRotationChange(180)}>180°</button>
+            <button className="layout-btn" onClick={() => onRotationChange(270)}>270°</button>
           </div>
         </div>
       </div>

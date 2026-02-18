@@ -111,7 +111,7 @@ const Editor: React.FC<EditorProps> = ({
       <Stage
         width={canvasWidth}
         height={canvasHeight}
-        style={{ border: '1px solid #ccc' }}
+        className="canvas-stage"
         ref={stageRef}
       >
         <Layer>
@@ -207,7 +207,7 @@ const Editor: React.FC<EditorProps> = ({
               fontFamily={textItem.fontFamily}
               fill={textItem.fill}
               fontStyle={textItem.fontStyle || 'normal'}
-              width={canvasWidth - marginLeft - marginRight - textItem.x - 20}
+              width={Math.max(50, canvasWidth - marginLeft - marginRight - textItem.x - 10)}
               lineHeight={1.2}
               draggable
               onDragEnd={(e) => {
@@ -232,39 +232,8 @@ const Editor: React.FC<EditorProps> = ({
         <div
           className="upload-icon-overlay"
           onClick={onUploadClick}
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            cursor: 'pointer',
-            zIndex: 10,
-          }}
         >
-          <div
-            style={{
-              width: '64px',
-              height: '64px',
-              backgroundColor: 'rgba(0, 123, 255, 0.9)',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: '28px',
-              fontWeight: 'bold',
-              transition: 'all 0.2s ease',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(0, 86, 179, 0.95)';
-              e.currentTarget.style.transform = 'scale(1.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(0, 123, 255, 0.9)';
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-          >
+          <div className="upload-icon">
             +
           </div>
         </div>
