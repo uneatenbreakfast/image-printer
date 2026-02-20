@@ -150,472 +150,532 @@ const Controls: React.FC<ControlsProps> = ({
   loadComprehensiveTemplate,
   deleteComprehensiveTemplate,
 }) => {
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    layout: true,
+    imageUpload: true,
+    imageControls: false,
+    qrCode: false,
+    border: false,
+    margins: false,
+    text: true,
+    print: true,
+    templates: false,
+    comprehensive: false,
+  });
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const renderHeader = (title: string, sectionKey: string) => (
+    <h3 
+      onClick={() => toggleSection(sectionKey)} 
+      style={{ cursor: 'pointer', userSelect: 'none' }}
+      className={expandedSections[sectionKey] ? 'expanded' : 'collapsed'}
+    >
+      {title}
+      <span className="toggle-icon">{expandedSections[sectionKey] ? '−' : '+'}</span>
+    </h3>
+  );
+
   const [newTemplateName, setNewTemplateName] = useState<string>('');
   const [newComprehensiveTemplateName, setNewComprehensiveTemplateName] = useState<string>('');
-  const [qrCodeUrlInput, setQrCodeUrlInput] = useState<string>('https://example.com'); // State for QR URL input
-  const [showIndividualBorders, setShowIndividualBorders] = useState(false);
+  const [qrCodeUrlInput, setQrCodeUrlInput] = useState<string>('');
+  const [showIndividualBorders, setShowIndividualBorders] = useState<boolean>(false);
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
+    if (event.target.files && event.target.files[0]) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          onImageUpload(reader.result);
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          onImageUpload(e.target.result as string);
         }
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(event.target.files[0]);
     }
   };
 
   const handleAddText = () => {
-    // onAddText now only takes content, others come from activeState
-    if (activeState.defaultTextContent.trim() !== '') {
-      onAddText(activeState.defaultTextContent);
-    }
+    onAddText(activeState.defaultTextContent);
   };
 
   return (
     <div>
       <div className="control-group">
-        <h3>Layout</h3>
-        <div className="button-group" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <button className="layout-btn" onClick={() => onLayoutChange('current')} disabled={layoutMode === 'current'}>Single</button>
-          <button className="layout-btn" onClick={() => onLayoutChange('2x3')} disabled={layoutMode === '2x3'}>2x3 Split</button>
-          <button className="layout-btn" onClick={() => onLayoutChange('4cards')} disabled={layoutMode === '4cards'}>4 Cards</button>
-          <button className="layout-btn" onClick={() => onLayoutChange('4cards-portrait')} disabled={layoutMode === '4cards-portrait'}>4 Cards Portrait</button>
-        </div>
-      </div>
-
-      <div className="control-group">
-        <h3>Image Upload</h3>
-        <label>{layoutMode === '2x3' ? 'Active Image Upload' : 'Image Upload'}</label>
-        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} />
-        {activeState.imageDataUrl && (
-          <button 
-            onClick={onRemoveImage} 
-            style={{ marginTop: '10px', backgroundColor: '#dc3545' }}
-          >
-            Remove Image
-          </button>
-        )}
-      </div>
-
-      <div className="control-group">
-        <h3>Image Controls</h3>
-        <div>
-          <label>Scale: {Math.round(activeState.scale * 100)}%</label>
-          <input
-            type="range"
-            min="0.1"
-            max="3"
-            step="0.05"
-            value={activeState.scale}
-            onChange={(e) => onScaleChange(Number(e.target.value))}
-          />
-        </div>
-        <div>
-          <label>Rotation: {activeState.rotation}°</label>
-          <input
-            type="range"
-            min="0"
-            max="360"
-            value={activeState.rotation}
-            onChange={(e) => onRotationChange(Number(e.target.value))}
-          />
-          <div className="button-group">
-            <button className="layout-btn" onClick={() => onRotationChange(0)}>0°</button>
-            <button className="layout-btn" onClick={() => onRotationChange(90)}>90°</button>
-            <button className="layout-btn" onClick={() => onRotationChange(180)}>180°</button>
-            <button className="layout-btn" onClick={() => onRotationChange(270)}>270°</button>
-          </div>
-        </div>
-      </div>
-
-      <div className="control-group">
-        <h3>QR Code Controls</h3>
-        <div>
-          <label>URL for QR Code:</label>
-          <input
-            type="text"
-            value={qrCodeUrlInput}
-            onChange={(e) => setQrCodeUrlInput(e.target.value)}
-            placeholder="Enter URL"
-          />
-          <button onClick={() => onAddQrCode(qrCodeUrlInput)} style={{ marginTop: '10px' }}>Generate QR Code</button>
-        </div>
-        {activeState.qrCodes.length > 0 && (
-          <div style={{ marginTop: '15px' }}>
-            <label>Added QR Codes:</label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '5px' }}>
-              {activeState.qrCodes.map((qr, index) => (
-                <div 
-                  key={qr.id} 
-                  style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    padding: '5px 10px',
-                    backgroundColor: '#f5f5f5',
-                    borderRadius: '4px',
-                    fontSize: '0.9em'
-                  }}
-                >
-                  <span>QR Code {index + 1}</span>
-                  <button
-                    onClick={() => onRemoveQrCode(qr.id)}
-                    style={{ 
-                      width: 'auto', 
-                      padding: '2px 8px', 
-                      fontSize: '0.8em',
-                      backgroundColor: '#dc3545'
-                    }}
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-            </div>
+        {renderHeader('Layout', 'layout')}
+        {expandedSections.layout && (
+          <div className="button-group" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <button className="layout-btn" onClick={() => onLayoutChange('current')} disabled={layoutMode === 'current'}>Single</button>
+            <button className="layout-btn" onClick={() => onLayoutChange('2x3')} disabled={layoutMode === '2x3'}>2x3 Split</button>
+            <button className="layout-btn" onClick={() => onLayoutChange('4cards')} disabled={layoutMode === '4cards'}>4 Cards</button>
+            <button className="layout-btn" onClick={() => onLayoutChange('4cards-portrait')} disabled={layoutMode === '4cards-portrait'}>4 Cards Portrait</button>
           </div>
         )}
       </div>
 
       <div className="control-group">
-        <h3>Border Controls</h3>
-        <div>
-          <label>All Borders: {
-            Math.round(
-              (activeState.borderThicknessTop +
-               activeState.borderThicknessBottom +
-               activeState.borderThicknessLeft +
-               activeState.borderThicknessRight) / 4
-            )
-          }px</label>
-          <input
-            type="range"
-            min="0"
-            max="50"
-            value={Math.round(
-              (activeState.borderThicknessTop +
-               activeState.borderThicknessBottom +
-               activeState.borderThicknessLeft +
-               activeState.borderThicknessRight) / 4
+        {renderHeader('Image Upload', 'imageUpload')}
+        {expandedSections.imageUpload && (
+          <>
+            <label>{layoutMode === '2x3' ? 'Active Image Upload' : 'Image Upload'}</label>
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} />
+            {activeState.imageDataUrl && (
+              <button 
+                onClick={onRemoveImage} 
+                style={{ marginTop: '10px', backgroundColor: '#dc3545' }}
+              >
+                Remove Image
+              </button>
             )}
-            onChange={(e) => onBorderThicknessAllChange(Number(e.target.value))}
-          />
-        </div>
-        <button
-          onClick={() => setShowIndividualBorders(!showIndividualBorders)}
-          style={{ marginTop: '10px', marginBottom: '10px', width: 'auto' }}
-        >
-          {showIndividualBorders ? 'Hide' : 'Adjust'} Individual Borders
-        </button>
-        {showIndividualBorders && (
+          </>
+        )}
+      </div>
+
+      <div className="control-group">
+        {renderHeader('Image Controls', 'imageControls')}
+        {expandedSections.imageControls && (
           <>
             <div>
-              <label>Top Thickness: {activeState.borderThicknessTop}px</label>
+              <label>Scale: {Math.round(activeState.scale * 100)}%</label>
               <input
                 type="range"
-                min="0"
-                max="50"
-                value={activeState.borderThicknessTop}
-                onChange={(e) => onBorderThicknessTopChange(Number(e.target.value))}
+                min="0.1"
+                max="3"
+                step="0.05"
+                value={activeState.scale}
+                onChange={(e) => onScaleChange(Number(e.target.value))}
               />
             </div>
             <div>
-              <label>Bottom Thickness: {activeState.borderThicknessBottom}px</label>
+              <label>Rotation: {activeState.rotation}°</label>
+              <input
+                type="range"
+                min="0"
+                max="360"
+                value={activeState.rotation}
+                onChange={(e) => onRotationChange(Number(e.target.value))}
+              />
+              <div className="button-group">
+                <button className="layout-btn" onClick={() => onRotationChange(0)}>0°</button>
+                <button className="layout-btn" onClick={() => onRotationChange(90)}>90°</button>
+                <button className="layout-btn" onClick={() => onRotationChange(180)}>180°</button>
+                <button className="layout-btn" onClick={() => onRotationChange(270)}>270°</button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="control-group">
+        {renderHeader('QR Code Controls', 'qrCode')}
+        {expandedSections.qrCode && (
+          <>
+            <div>
+              <label>URL for QR Code:</label>
+              <input
+                type="text"
+                value={qrCodeUrlInput}
+                onChange={(e) => setQrCodeUrlInput(e.target.value)}
+                placeholder="Enter URL"
+              />
+              <button onClick={() => onAddQrCode(qrCodeUrlInput)} style={{ marginTop: '10px' }}>Generate QR Code</button>
+            </div>
+            {activeState.qrCodes.length > 0 && (
+              <div style={{ marginTop: '15px' }}>
+                <label>Added QR Codes:</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '5px' }}>
+                  {activeState.qrCodes.map((qr, index) => (
+                    <div 
+                      key={qr.id} 
+                      style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        padding: '5px 10px',
+                        backgroundColor: '#f5f5f5',
+                        borderRadius: '4px',
+                        fontSize: '0.9em'
+                      }}
+                    >
+                      <span>QR Code {index + 1}</span>
+                      <button
+                        onClick={() => onRemoveQrCode(qr.id)}
+                        style={{ 
+                          width: 'auto', 
+                          padding: '2px 8px', 
+                          fontSize: '0.8em',
+                          backgroundColor: '#dc3545'
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="control-group">
+        {renderHeader('Border Controls', 'border')}
+        {expandedSections.border && (
+          <>
+            <div>
+              <label>All Borders: {
+                Math.round(
+                  (activeState.borderThicknessTop +
+                   activeState.borderThicknessBottom +
+                   activeState.borderThicknessLeft +
+                   activeState.borderThicknessRight) / 4
+                )
+              }px</label>
               <input
                 type="range"
                 min="0"
                 max="50"
-                value={activeState.borderThicknessBottom}
-                onChange={(e) => onBorderThicknessBottomChange(Number(e.target.value))}
+                value={Math.round(
+                  (activeState.borderThicknessTop +
+                   activeState.borderThicknessBottom +
+                   activeState.borderThicknessLeft +
+                   activeState.borderThicknessRight) / 4
+                )}
+                onChange={(e) => onBorderThicknessAllChange(Number(e.target.value))}
+              />
+            </div>
+            <button
+              onClick={() => setShowIndividualBorders(!showIndividualBorders)}
+              style={{ marginTop: '10px', marginBottom: '10px', width: 'auto' }}
+            >
+              {showIndividualBorders ? 'Hide' : 'Adjust'} Individual Borders
+            </button>
+            {showIndividualBorders && (
+              <>
+                <div>
+                  <label>Top Thickness: {activeState.borderThicknessTop}px</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="50"
+                    value={activeState.borderThicknessTop}
+                    onChange={(e) => onBorderThicknessTopChange(Number(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <label>Bottom Thickness: {activeState.borderThicknessBottom}px</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="50"
+                    value={activeState.borderThicknessBottom}
+                    onChange={(e) => onBorderThicknessBottomChange(Number(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <label>Left Thickness: {activeState.borderThicknessLeft}px</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="50"
+                    value={activeState.borderThicknessLeft}
+                    onChange={(e) => onBorderThicknessLeftChange(Number(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <label>Right Thickness: {activeState.borderThicknessRight}px</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="50"
+                    value={activeState.borderThicknessRight}
+                    onChange={(e) => onBorderThicknessRightChange(Number(e.target.value))}
+                  />
+                </div>
+              </>
+            )}
+            <div>
+              <label>Corner Radius: {activeState.cornerRadius}px</label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={activeState.cornerRadius}
+                onChange={(e) => onCornerRadiusChange(Number(e.target.value))}
               />
             </div>
             <div>
-              <label>Left Thickness: {activeState.borderThicknessLeft}px</label>
-              <input
-                type="range"
-                min="0"
-                max="50"
-                value={activeState.borderThicknessLeft}
-                onChange={(e) => onBorderThicknessLeftChange(Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <label>Right Thickness: {activeState.borderThicknessRight}px</label>
-              <input
-                type="range"
-                min="0"
-                max="50"
-                value={activeState.borderThicknessRight}
-                onChange={(e) => onBorderThicknessRightChange(Number(e.target.value))}
+              <label>Color:</label>
+              <SketchPicker
+                color={activeState.borderColor}
+                onChange={(color) => onBorderColorChange(color.hex)}
               />
             </div>
           </>
         )}
-        <div>
-          <label>Corner Radius: {activeState.cornerRadius}px</label>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={activeState.cornerRadius}
-            onChange={(e) => onCornerRadiusChange(Number(e.target.value))}
-          />
-        </div>
-        <div>
-          <label>Color:</label>
-          <SketchPicker
-            color={activeState.borderColor}
-            onChange={(color) => onBorderColorChange(color.hex)}
-          />
-        </div>
       </div>
 
       <div className="control-group">
-        <h3>Canvas Margin Controls</h3>
-        <div>
-          <label>Top: {canvasMargins.top}px</label>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={canvasMargins.top}
-            onChange={(e) => onCanvasMarginTopChange(Number(e.target.value))}
-          />
-        </div>
-        <div>
-          <label>Bottom: {canvasMargins.bottom}px</label>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={canvasMargins.bottom}
-            onChange={(e) => onCanvasMarginBottomChange(Number(e.target.value))}
-          />
-        </div>
-        <div>
-          <label>Left: {canvasMargins.left}px</label>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={canvasMargins.left}
-            onChange={(e) => onCanvasMarginLeftChange(Number(e.target.value))}
-          />
-        </div>
-        <div>
-          <label>Right: {canvasMargins.right}px</label>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={canvasMargins.right}
-            onChange={(e) => onCanvasMarginRightChange(Number(e.target.value))}
-          />
-        </div>
-      </div>
-
-      <div className="control-group">
-        <h3>Text Controls</h3>
-        <div>
-          <label>Content:</label>
-          <textarea
-            value={activeState.defaultTextContent}
-            onChange={(e) => onDefaultTextContentChange(e.target.value)}
-            placeholder="Enter text (use Shift+Enter for new line)"
-            rows={3}
-            style={{ width: '100%', resize: 'vertical' }}
-          />
-        </div>
-        <div>
-          <label>Font Size: {activeState.defaultTextFontSize}px</label>
-          <input
-            type="range"
-            min="10"
-            max="100"
-            value={activeState.defaultTextFontSize}
-            onChange={(e) => onDefaultTextFontSizeChange(Number(e.target.value))}
-          />
-        </div>
-        <div>
-          <label>Color:</label>
-          <SketchPicker
-            color={activeState.defaultTextColor}
-            onChange={(color) => onDefaultTextColorChange(color.hex)}
-          />
-        </div>
-        <button onClick={handleAddText} style={{ marginTop: '10px' }}>Add Text</button>
-        {activeState.texts.length > 0 && (
-          <div style={{ marginTop: '15px' }}>
-            <label>Added Text Elements:</label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '5px' }}>
-              {activeState.texts.map((text: any) => (
-              <div
-                  key={text.id}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '5px',
-                    padding: '8px 10px',
-                    backgroundColor: '#f5f5f5',
-                    borderRadius: '4px',
-                    fontSize: '0.9em'
-                  }}
-                >
-                  <textarea
-                    value={text.content}
-                    onChange={(e) => onEditText(text.id, e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '4px 8px',
-                      border: '1px solid #ccc',
-                      borderRadius: '3px',
-                      fontSize: '0.9em',
-                      resize: 'vertical',
-                      minHeight: '60px'
-                    }}
-                    rows={2}
-                  />
-                  <div style={{ display: 'flex', gap: '5px', justifyContent: 'space-between' }}>
-                    <button
-                      onClick={() => onToggleTextBold(text.id)}
-                      style={{
-                        width: 'auto',
-                        padding: '2px 8px',
-                        fontSize: '0.8em',
-                        backgroundColor: text.fontStyle === 'bold' ? '#007bff' : '#6c757d',
-                        flex: 1
-                      }}
-                    >
-                      {text.fontStyle === 'bold' ? 'Bold ✓' : 'Bold'}
-                    </button>
-                    <button
-                      onClick={() => onRemoveText(text.id)}
-                      style={{
-                        width: 'auto',
-                        padding: '2px 8px',
-                        fontSize: '0.8em',
-                        backgroundColor: '#dc3545',
-                        flex: 1
-                      }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              ))}
+        {renderHeader('Canvas Margin Controls', 'margins')}
+        {expandedSections.margins && (
+          <>
+            <div>
+              <label>Top: {canvasMargins.top}px</label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={canvasMargins.top}
+                onChange={(e) => onCanvasMarginTopChange(Number(e.target.value))}
+              />
             </div>
-          </div>
+            <div>
+              <label>Bottom: {canvasMargins.bottom}px</label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={canvasMargins.bottom}
+                onChange={(e) => onCanvasMarginBottomChange(Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label>Left: {canvasMargins.left}px</label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={canvasMargins.left}
+                onChange={(e) => onCanvasMarginLeftChange(Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label>Right: {canvasMargins.right}px</label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={canvasMargins.right}
+                onChange={(e) => onCanvasMarginRightChange(Number(e.target.value))}
+              />
+            </div>
+          </>
         )}
       </div>
 
       <div className="control-group">
-        <h3>Print</h3>
-        <button onClick={onPrint}>Print Image</button>
+        {renderHeader('Text Controls', 'text')}
+        {expandedSections.text && (
+          <>
+            <div>
+              <label>Content:</label>
+              <textarea
+                value={activeState.defaultTextContent}
+                onChange={(e) => onDefaultTextContentChange(e.target.value)}
+                placeholder="Enter text (use Shift+Enter for new line)"
+                rows={3}
+                style={{ width: '100%', resize: 'vertical' }}
+              />
+            </div>
+            <div>
+              <label>Font Size: {activeState.defaultTextFontSize}px</label>
+              <input
+                type="range"
+                min="10"
+                max="100"
+                value={activeState.defaultTextFontSize}
+                onChange={(e) => onDefaultTextFontSizeChange(Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label>Color:</label>
+              <SketchPicker
+                color={activeState.defaultTextColor}
+                onChange={(color) => onDefaultTextColorChange(color.hex)}
+              />
+            </div>
+            <button onClick={handleAddText} style={{ marginTop: '10px' }}>Add Text</button>
+            {activeState.texts.length > 0 && (
+              <div style={{ marginTop: '15px' }}>
+                <label>Added Text Elements:</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '5px' }}>
+                  {activeState.texts.map((text: any) => (
+                  <div
+                      key={text.id}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '5px',
+                        padding: '8px 10px',
+                        backgroundColor: '#f5f5f5',
+                        borderRadius: '4px',
+                        fontSize: '0.9em'
+                      }}
+                    >
+                      <textarea
+                        value={text.content}
+                        onChange={(e) => onEditText(text.id, e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '4px 8px',
+                          border: '1px solid #ccc',
+                          borderRadius: '3px',
+                          fontSize: '0.9em',
+                          resize: 'vertical',
+                          minHeight: '60px'
+                        }}
+                        rows={2}
+                      />
+                      <div style={{ display: 'flex', gap: '5px', justifyContent: 'space-between' }}>
+                        <button
+                          onClick={() => onToggleTextBold(text.id)}
+                          style={{
+                            width: 'auto',
+                            padding: '2px 8px',
+                            fontSize: '0.8em',
+                            backgroundColor: text.fontStyle === 'bold' ? '#007bff' : '#6c757d',
+                            flex: 1
+                          }}
+                        >
+                          {text.fontStyle === 'bold' ? 'Bold ✓' : 'Bold'}
+                        </button>
+                        <button
+                          onClick={() => onRemoveText(text.id)}
+                          style={{
+                            width: 'auto',
+                            padding: '2px 8px',
+                            fontSize: '0.8em',
+                            backgroundColor: '#dc3545',
+                            flex: 1
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       <div className="control-group">
-        <h3>Templates</h3>
-        <div>
-          <label>Template Name:</label>
-          <input
-            type="text"
-            value={newTemplateName}
-            onChange={(e) => setNewTemplateName(e.target.value)}
-            placeholder="Enter template name"
-          />
-          <button onClick={() => saveTemplate(newTemplateName)} style={{ marginTop: '10px' }}>Save Template</button>
-        </div>
-        <div style={{ marginTop: '20px' }}>
-          <label>Saved Templates:</label>
-          <div className="template-thumbnail-grid">
-            {templates.map(t => (
-              <div
-                key={t.name}
-                className="template-thumbnail-item"
-                // On click, load the template
-                onClick={() => loadTemplate(t)}
-                title={t.name}
-              >
-                {t.thumbnailDataUrl ? (
-                  <img src={t.thumbnailDataUrl} alt={t.name} />
-                ) : (
-                  <div className="no-thumbnail">No Preview</div>
-                )}
-                <span className="template-name">{t.name}</span>
-                {/* Delete button for each template */}
-                {!t.isDefault && (
-                  <button
-                    className="delete-template-btn"
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent loading template when deleting
-                      deleteTemplate(t.name);
-                    }}
-                    title={`Delete ${t.name}`}
-                  >
-                    &times;
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        {renderHeader('Print', 'print')}
+        {expandedSections.print && (
+          <button onClick={onPrint}>Print Image</button>
+        )}
       </div>
 
       <div className="control-group">
-        <h3>Comprehensive Templates (Save Everything)</h3>
-        <div>
-          <label>Template Name:</label>
-          <input
-            type="text"
-            value={newComprehensiveTemplateName}
-            onChange={(e) => setNewComprehensiveTemplateName(e.target.value)}
-            placeholder="Enter comprehensive template name"
-          />
-          <button 
-            onClick={() => saveComprehensiveTemplate(newComprehensiveTemplateName)} 
-            style={{ marginTop: '10px' }}
-          >
-            Save Everything
-          </button>
-        </div>
-        <div style={{ marginTop: '20px' }}>
-          <label>Saved Comprehensive Templates:</label>
-          <div className="template-thumbnail-grid">
-            {comprehensiveTemplates.map(t => (
-              <div
-                key={t.name}
-                className="template-thumbnail-item"
-                onClick={() => loadComprehensiveTemplate(t)}
-                title={`${t.name} (${t.layoutMode}) - ${new Date(t.createdAt).toLocaleDateString()}`}
-              >
-                {t.thumbnailDataUrl ? (
-                  <img src={t.thumbnailDataUrl} alt={t.name} />
-                ) : (
-                  <div className="no-thumbnail">No Preview</div>
-                )}
-                <span className="template-name">{t.name}</span>
-                <span className="template-info" style={{ fontSize: '0.7em', color: '#666' }}>
-                  {t.layoutMode}
-                </span>
-                {!t.isDefault && (
-                  <button
-                    className="delete-template-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteComprehensiveTemplate(t.name);
-                    }}
-                    title={`Delete ${t.name}`}
+        {renderHeader('Templates', 'templates')}
+        {expandedSections.templates && (
+          <>
+            <div>
+              <label>Template Name:</label>
+              <input
+                type="text"
+                value={newTemplateName}
+                onChange={(e) => setNewTemplateName(e.target.value)}
+                placeholder="Enter template name"
+              />
+              <button onClick={() => saveTemplate(newTemplateName)} style={{ marginTop: '10px' }}>Save Template</button>
+            </div>
+            <div style={{ marginTop: '20px' }}>
+              <label>Saved Templates:</label>
+              <div className="template-thumbnail-grid">
+                {templates.map(t => (
+                  <div
+                    key={t.name}
+                    className="template-thumbnail-item"
+                    // On click, load the template
+                    onClick={() => loadTemplate(t)}
+                    title={t.name}
                   >
-                    &times;
-                  </button>
-                )}
+                    {t.thumbnailDataUrl ? (
+                      <img src={t.thumbnailDataUrl} alt={t.name} />
+                    ) : (
+                      <div className="no-thumbnail">No Preview</div>
+                    )}
+                    <span className="template-name">{t.name}</span>
+                    {/* Delete button for each template */}
+                    {!t.isDefault && (
+                      <button
+                        className="delete-template-btn"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent loading template when deleting
+                          deleteTemplate(t.name);
+                        }}
+                        title={`Delete ${t.name}`}
+                      >
+                        &times;
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="control-group">
+        {renderHeader('Comprehensive Templates', 'comprehensive')}
+        {expandedSections.comprehensive && (
+          <>
+            <div>
+              <label>Template Name:</label>
+              <input
+                type="text"
+                value={newComprehensiveTemplateName}
+                onChange={(e) => setNewComprehensiveTemplateName(e.target.value)}
+                placeholder="Enter comprehensive template name"
+              />
+              <button 
+                onClick={() => saveComprehensiveTemplate(newComprehensiveTemplateName)} 
+                style={{ marginTop: '10px' }}
+              >
+                Save Everything
+              </button>
+            </div>
+            <div style={{ marginTop: '20px' }}>
+              <label>Saved Comprehensive Templates:</label>
+              <div className="template-thumbnail-grid">
+                {comprehensiveTemplates.map(t => (
+                  <div
+                    key={t.name}
+                    className="template-thumbnail-item"
+                    onClick={() => loadComprehensiveTemplate(t)}
+                    title={`${t.name} (${t.layoutMode}) - ${new Date(t.createdAt).toLocaleDateString()}`}
+                  >
+                    {t.thumbnailDataUrl ? (
+                      <img src={t.thumbnailDataUrl} alt={t.name} />
+                    ) : (
+                      <div className="no-thumbnail">No Preview</div>
+                    )}
+                    <span className="template-name">{t.name}</span>
+                    <span className="template-info" style={{ fontSize: '0.7em', color: '#666' }}>
+                      {t.layoutMode}
+                    </span>
+                    {!t.isDefault && (
+                      <button
+                        className="delete-template-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteComprehensiveTemplate(t.name);
+                        }}
+                        title={`Delete ${t.name}`}
+                      >
+                        &times;
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

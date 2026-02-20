@@ -26,10 +26,16 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
-  margin: 0 0 1rem 0;
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  transition: color 0.2s ease;
+  padding: 0.5rem 0;
+}
+
+.controls-panel h3:hover {
+  color: var(--primary);
 }
 
 .controls-panel h3::after {
@@ -38,6 +44,24 @@
   height: 1px;
   background-color: var(--border-color);
   opacity: 0.5;
+}
+
+.toggle-icon {
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  width: 20px;
+  display: flex;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+h3.collapsed .toggle-icon {
+  color: var(--primary);
+}
+
+h3.expanded .toggle-icon {
+  color: var(--text-muted);
 }
 
 .control-group {
