@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import type Konva from 'konva';
+import Konva from 'konva';
 import { Stage, Layer, Image as KonvaImage, Rect, Text, Group } from 'react-konva';
 import type { SceneContext } from 'konva/lib/Context';
 import useImage from 'use-image';
@@ -35,6 +35,8 @@ interface EditorProps {
   qrCodes: QrCodeElement[];
   scale: number;
   rotation: number;
+  contrast: number;
+  brightness: number;
   onTextDragEnd: (id: string, x: number, y: number) => void;
   onQrCodeDragEnd: (id: string, newX: number, newY: number) => void;
   onUploadClick: () => void;
@@ -59,6 +61,8 @@ const Editor: React.FC<EditorProps> = ({
   qrCodes,
   scale,
   rotation,
+  contrast,
+  brightness,
   onTextDragEnd,
   onQrCodeDragEnd,
   onUploadClick,
@@ -105,6 +109,17 @@ const Editor: React.FC<EditorProps> = ({
       onStageReady(stageRef.current);
     }
   }, [onStageReady, stageRef.current]);
+
+  // Apply Konva filters for contrast and brightness
+  useEffect(() => {
+    const node = imageRef.current;
+    if (node && image) {
+      node.cache();
+      node.filters([Konva.Filters.Brighten, Konva.Filters.Contrast]);
+      node.brightness(brightness);
+      node.contrast(contrast);
+    }
+  }, [image, brightness, contrast]);
 
   return (
     <div style={{ position: 'relative', display: 'inline-block' }}>

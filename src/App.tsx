@@ -46,6 +46,8 @@ interface EditorState {
   qrCodes: QrCodeElement[]; // New property for QR codes
   scale: number;
   rotation: number;
+  contrast: number; // -100 to 100 (Konva Contrast filter)
+  brightness: number; // -1 to 1 (Konva Brighten filter)
   // Default text properties for new text elements
   defaultTextContent: string;
   defaultTextFontSize: number;
@@ -64,6 +66,8 @@ const initialEditorState: EditorState = {
   qrCodes: [], // Initialize qrCodes
   scale: 1,
   rotation: 0,
+  contrast: 0,
+  brightness: 0,
   defaultTextContent: "New Text",
   defaultTextFontSize: 20,
   defaultTextColor: "#FF0000",
@@ -79,6 +83,8 @@ interface Template {
   borderThicknessLeft: number;
   borderThicknessRight: number;
   cornerRadius: number;
+  contrast: number;
+  brightness: number;
   defaultTextContent: string;
   defaultTextFontSize: number;
   defaultTextColor: string;
@@ -321,6 +327,20 @@ function App() {
   const handleRotationChange = useCallback(
     (rotation: number) => {
       setActiveState((prev) => ({ ...prev, rotation }));
+    },
+    [setActiveState],
+  );
+
+  const handleContrastChange = useCallback(
+    (contrast: number) => {
+      setActiveState((prev) => ({ ...prev, contrast }));
+    },
+    [setActiveState],
+  );
+
+  const handleBrightnessChange = useCallback(
+    (brightness: number) => {
+      setActiveState((prev) => ({ ...prev, brightness }));
     },
     [setActiveState],
   );
@@ -620,6 +640,8 @@ setActiveState(prev => ({
         borderThicknessLeft: template.borderThicknessLeft,
         borderThicknessRight: template.borderThicknessRight,
         cornerRadius: template.cornerRadius,
+        contrast: template.contrast ?? 0,
+        brightness: template.brightness ?? 0,
         defaultTextContent: template.defaultTextContent,
         defaultTextFontSize: template.defaultTextFontSize,
         defaultTextColor: template.defaultTextColor,
@@ -1225,6 +1247,8 @@ setActiveState(prev => ({
           onCornerRadiusChange={handleCornerRadiusChange}
           onScaleChange={handleScaleChange}
           onRotationChange={handleRotationChange}
+          onContrastChange={handleContrastChange}
+          onBrightnessChange={handleBrightnessChange}
           // QR Code Handlers
           onAddQrCode={handleAddQrCode}
           onRemoveQrCode={handleRemoveQrCode}

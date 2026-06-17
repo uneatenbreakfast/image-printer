@@ -27,6 +27,8 @@ interface EditorState {
   qrCodes: any[];
   scale: number;
   rotation: number;
+  contrast: number;
+  brightness: number;
   defaultTextContent: string;
   defaultTextFontSize: number;
   defaultTextColor: string;
@@ -40,6 +42,8 @@ interface Template {
   borderThicknessLeft: number;
   borderThicknessRight: number;
   cornerRadius: number;
+  contrast: number;
+  brightness: number;
   defaultTextContent: string;
   defaultTextFontSize: number;
   defaultTextColor: string;
@@ -69,6 +73,8 @@ interface ControlsProps {
   onCornerRadiusChange: (radius: number) => void;
   onScaleChange: (scale: number) => void;
   onRotationChange: (rotation: number) => void;
+  onContrastChange: (contrast: number) => void;
+  onBrightnessChange: (brightness: number) => void;
   // QR Code handlers
   onAddQrCode: (url: string) => Promise<void>;
   onRemoveQrCode: (id: string) => void;
@@ -119,6 +125,8 @@ const Controls: React.FC<ControlsProps> = ({
   onCornerRadiusChange,
   onScaleChange,
   onRotationChange,
+  onContrastChange,
+  onBrightnessChange,
   onAddQrCode,
   onRemoveQrCode,
   onDefaultTextContentChange,
@@ -261,6 +269,28 @@ const Controls: React.FC<ControlsProps> = ({
                 <button className="layout-btn" onClick={() => onRotationChange(180)}>180°</button>
                 <button className="layout-btn" onClick={() => onRotationChange(270)}>270°</button>
               </div>
+            </div>
+            <div>
+              <label>Contrast: {activeState.contrast}</label>
+              <input
+                type="range"
+                min="-100"
+                max="100"
+                step="1"
+                value={activeState.contrast}
+                onChange={(e) => onContrastChange(Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label>Brightness: {activeState.brightness.toFixed(2)}</label>
+              <input
+                type="range"
+                min="-1"
+                max="1"
+                step="0.05"
+                value={activeState.brightness}
+                onChange={(e) => onBrightnessChange(Number(e.target.value))}
+              />
             </div>
           </>
         )}
