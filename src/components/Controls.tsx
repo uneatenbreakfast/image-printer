@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { SketchPicker } from 'react-color';
+import {
+  getServiceAccount,
+  setServiceAccount,
+  clearServiceAccount,
+  getDriveFileId,
+  setDriveFileId,
+} from '../drive';
 
 // Re-defining these types from App.tsx to avoid circular dependencies.
 // In a larger app, this would be in a shared types file.
@@ -113,6 +120,10 @@ interface ControlsProps {
   saveComprehensiveTemplate: (name: string) => void;
   loadComprehensiveTemplate: (template: ComprehensiveTemplate) => void;
   deleteComprehensiveTemplate: (name: string) => void;
+  // Drive handlers
+  onSaveToDrive: () => Promise<void>;
+  onLoadFromDrive: () => Promise<{ saved: boolean }>;
+  driveStatus: "idle" | "saving" | "loading" | "error";
 }
 
 const Controls: React.FC<ControlsProps> = ({
@@ -157,6 +168,10 @@ const Controls: React.FC<ControlsProps> = ({
   saveComprehensiveTemplate,
   loadComprehensiveTemplate,
   deleteComprehensiveTemplate,
+  // Drive handlers
+  onSaveToDrive,
+  onLoadFromDrive,
+  driveStatus,
 }) => {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     layout: true,
@@ -169,6 +184,7 @@ const Controls: React.FC<ControlsProps> = ({
     print: true,
     templates: false,
     comprehensive: false,
+    drive: true,
   });
 
   const toggleSection = (section: string) => {
@@ -190,6 +206,11 @@ const Controls: React.FC<ControlsProps> = ({
   const [newComprehensiveTemplateName, setNewComprehensiveTemplateName] = useState<string>('');
   const [qrCodeUrlInput, setQrCodeUrlInput] = useState<string>('');
   const [showIndividualBorders, setShowIndividualBorders] = useState<boolean>(false);
+  const [driveResult, setDriveResult] = useState<string>('');
+  const [showDriveConfig, setShowDriveConfig] = useState<boolean>(!getServiceAccount());
+  const [saJsonInput, setSaJsonInput] = useState<string>('');
+  const [fileIdInput, setFileIdInput] = useState<string>(getDriveFileId());
+  const [configMsg, setConfigMsg] = useState<string>('');
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -209,6 +230,135 @@ const Controls: React.FC<ControlsProps> = ({
 
   return (
     <div>
+      <div className="control-group">
+        {renderHeader('Google Drive', 'drive')}
+        {expandedSections.drive && (
+          <>
+            <div style={{ marginBottom: '10px', padding: '8px', border: '1px solid #444', borderRadius: '4px' }}>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                onClick={() => setShowDriveConfig(!showDriveConfig)}
+              >
+                <span style={{ fontWeight: 'bold' }}>
+                  {getServiceAccount() ? '✓ Configured' : '⚠ Not configured'}
+                </span>
+                <span style={{ fontSize: '0.85em', color: '#888' }}>{showDriveConfig ? '▼ Hide' : '▶ Show'}</span>
+              </div>
+              {showDriveConfig && (
+                <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '0.85em' }}>
+                    Service Account JSON (paste full contents, stored in browser localStorage):
+                  </label>
+                  <textarea
+                    value={saJsonInput}
+                    onChange={(e) => setSaJsonInput(e.target.value)}
+                    placeholder='{"type":"service_account","project_id":"...","...}'
+                    rows={4}
+                    style={{ fontFamily: 'monospace', fontSize: '0.75em', width: '100%' }}
+                  />
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      onClick={() => {
+                        const r = setServiceAccount(saJsonInput);
+                        if (r.ok) {
+                          setConfigMsg('Saved service account');
+                          setSaJsonInput('');
+                        } else {
+                          setConfigMsg(`Error: ${r.error}`);
+                        }
+                      }}
+                      style={{ flex: 1 }}
+                    >
+                      Save Key
+                    </button>
+                    <button
+                      onClick={() => {
+                        clearServiceAccount();
+                        setSaJsonInput('');
+                        setConfigMsg('Cleared');
+                      }}
+                      style={{ flex: 1 }}
+                    >
+                      Clear Key
+                    </button>
+                  </div>
+                  <label style={{ fontSize: '0.85em' }}>Drive File ID:</label>
+                  <input
+                    type="text"
+                    value={fileIdInput}
+                    onChange={(e) => setFileIdInput(e.target.value)}
+                    placeholder="e.g. 1aBcD3fGhIjKlMnOpQrStUvWxYz"
+                    style={{ fontFamily: 'monospace', fontSize: '0.85em', width: '100%' }}
+                  />
+                  <button
+                    onClick={() => {
+                      setDriveFileId(fileIdInput);
+                      setConfigMsg('Saved file ID');
+                    }}
+                  >
+                    Save File ID
+                  </button>
+                  {configMsg && (
+                    <div style={{
+                      fontSize: '0.8em',
+                      color: configMsg.startsWith('Error') ? '#ef4444' : '#22c55e',
+                      fontStyle: 'italic',
+                    }}>
+                      {configMsg}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+              <button
+                onClick={async () => {
+                  setDriveResult('Saving...');
+                  try {
+                    await onSaveToDrive();
+                    setDriveResult(`Saved at ${new Date().toLocaleTimeString()}`);
+                  } catch (e: any) {
+                    setDriveResult(`Error: ${e.message}`);
+                  }
+                }}
+                disabled={driveStatus === 'saving'}
+                style={{ flex: 1 }}
+              >
+                {driveStatus === 'saving' ? 'Saving…' : 'Save to Drive'}
+              </button>
+              <button
+                onClick={async () => {
+                  setDriveResult('Loading...');
+                  try {
+                    const result = await onLoadFromDrive();
+                    setDriveResult(
+                      result.saved
+                        ? 'Loaded successfully'
+                        : 'No data found in Drive',
+                    );
+                  } catch (e: any) {
+                    setDriveResult(`Error: ${e.message}`);
+                  }
+                }}
+                disabled={driveStatus === 'loading'}
+                style={{ flex: 1 }}
+              >
+                {driveStatus === 'loading' ? 'Loading…' : 'Load from Drive'}
+              </button>
+            </div>
+            {driveResult && (
+              <div style={{
+                fontSize: '0.85em',
+                color: driveResult.startsWith('Error') ? '#ef4444' : '#22c55e',
+                fontStyle: 'italic',
+              }}>
+                {driveResult}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
       <div className="control-group">
         {renderHeader('Layout', 'layout')}
         {expandedSections.layout && (

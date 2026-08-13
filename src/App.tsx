@@ -1,14 +1,15 @@
 import Konva from "konva";
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback, useMemo, useLayoutEffect } from "react";
 import { useReactToPrint } from "react-to-print";
 import "./App.css";
 import Editor from "./components/Editor";
 import Controls from "./components/Controls";
 import QRCode from "qrcode"; // Import qrcode library
-import { 
-  imagePrinterTemplatesDefault, 
-  imagePrinterComprehensiveTemplatesDefaults 
+import {
+  imagePrinterTemplatesDefault,
+  imagePrinterComprehensiveTemplatesDefaults
 } from "./defaultTemplates";
+import { driveRead, driveWrite } from "./drive";
 
 const PRINT_ASPECT_RATIO_WIDTH = 600;
 const PRINT_ASPECT_RATIO_HEIGHT = 400;
@@ -107,6 +108,8 @@ interface ComprehensiveTemplate {
 const defaultTemplates: Template[] = JSON.parse(imagePrinterTemplatesDefault).map((t: any) => ({ ...t, isDefault: true }));
 const defaultComprehensiveTemplates: ComprehensiveTemplate[] = JSON.parse(imagePrinterComprehensiveTemplatesDefaults).map((t: any) => ({ ...t, isDefault: true }));
 
+// Drive API client lives in ./drive (pure static, WebCrypto-signed JWT)
+
 function App() {
   const [layoutMode, setLayoutMode] = useState<
     "current" | "2x3" | "4cards" | "4cards-portrait"
@@ -122,6 +125,25 @@ function App() {
     left: 0,
     right: 0,
   });
+
+  const [driveStatus, setDriveStatus] = useState<"idle" | "saving" | "loading" | "error">("idle");
+
+  // Browser fullscreen state + toggle
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    const onFsChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
 
   const [editorStates, setEditorStates] = useState<
     Record<
@@ -214,6 +236,40 @@ function App() {
 
   // Ref for react-to-print v3 contentRef API
   const printContentRef = useRef<HTMLDivElement | null>(null);
+
+  // Ref for the editor panel (to measure available width for responsive scaling)
+  const editorPanelRef = useRef<HTMLDivElement | null>(null);
+  // Ref for the inner content wrapper (to measure natural content width)
+  const editorContentRef = useRef<HTMLDivElement | null>(null);
+  // Scale factor to shrink the editor canvas to fit narrow windows
+  const [fitScale, setFitScale] = useState(1);
+
+  // Responsive scaling: shrink editor content to fit the panel when the window is narrow
+  useLayoutEffect(() => {
+    const panel = editorPanelRef.current;
+    const content = editorContentRef.current;
+    if (!panel || !content) return;
+
+    const measure = () => {
+      const cs = getComputedStyle(panel);
+      const avail =
+        panel.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      const natural = content.offsetWidth;
+      if (avail > 0 && natural > 0) {
+        setFitScale(Math.min(1, avail / natural));
+      }
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(panel);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [layoutMode]);
+
 
   const editorRef = useRef<Konva.Stage | null>(null); // Ref for printing single editor's Konva Stage
 
@@ -870,6 +926,55 @@ setActiveState(prev => ({
   // State to force editor re-render after print
   const [printVersion, setPrintVersion] = useState(0);
 
+  // ---- Google Drive save/load ----
+  const handleSaveToDrive = useCallback(async () => {
+    setDriveStatus("saving");
+    try {
+      // Collect all state — the full picture with images
+      const stateToSave = {
+        layoutMode,
+        canvasMargins,
+        editorStates,
+        _savedAt: new Date().toISOString(),
+      };
+      const result = await driveWrite(stateToSave);
+      if (!result.ok) {
+        throw new Error(result.error || "Unknown write error");
+      }
+      setDriveStatus("idle");
+    } catch (err: any) {
+      setDriveStatus("error");
+      throw err;
+    }
+  }, [layoutMode, canvasMargins, editorStates]);
+
+  const handleLoadFromDrive = useCallback(async (): Promise<{ saved: boolean }> => {
+    setDriveStatus("loading");
+    try {
+      const result = await driveRead();
+      if (!result.saved || !result.data) {
+        return { saved: false };
+      }
+
+      const data = result.data;
+
+      // Restore layout mode and margins
+      if (data.layoutMode) setLayoutMode(data.layoutMode);
+      if (data.canvasMargins) setCanvasMargins(data.canvasMargins);
+
+      // Restore editor states (images included)
+      if (data.editorStates) {
+        setEditorStates(data.editorStates);
+      }
+
+      setDriveStatus("idle");
+      return { saved: true };
+    } catch (err: any) {
+      setDriveStatus("error");
+      throw err;
+    }
+  }, []);
+
   const handlePrint = useReactToPrint({
     contentRef: printContentRef,
     onBeforePrint: preparePrintContent,
@@ -1281,10 +1386,46 @@ setActiveState(prev => ({
           saveComprehensiveTemplate={saveComprehensiveTemplate}
           loadComprehensiveTemplate={loadComprehensiveTemplate}
           deleteComprehensiveTemplate={deleteComprehensiveTemplate}
+          // Drive handlers
+          onSaveToDrive={handleSaveToDrive}
+          onLoadFromDrive={handleLoadFromDrive}
+          driveStatus={driveStatus}
         />
       </div>
-      <div className="editor-panel">
-        <div ref={printContentRef}>{editorPanelContent}</div>
+      <div className="editor-panel" ref={editorPanelRef}>
+        <button
+          className="fullscreen-button"
+          onClick={toggleFullscreen}
+          title={isFullscreen ? "Exit full screen" : "Enter full screen"}
+          aria-label={isFullscreen ? "Exit full screen" : "Enter full screen"}
+        >
+          {isFullscreen ? (
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M8 3v3a2 2 0 0 1-2 2H3" />
+              <path d="M21 8h-3a2 2 0 0 1-2-2V3" />
+              <path d="M3 16h3a2 2 0 0 1 2 2v3" />
+              <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+              <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+              <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+              <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+            </svg>
+          )}
+        </button>
+        <div
+          style={{
+            transform: `scale(${fitScale})`,
+            transformOrigin: "center center",
+            transition: "transform 0.15s ease",
+          }}
+        >
+          <div ref={printContentRef} style={{ width: "max-content" }}>
+            <div ref={editorContentRef}>{editorPanelContent}</div>
+          </div>
+        </div>
       </div>
     </div>
   );

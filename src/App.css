@@ -8,7 +8,7 @@
 
 /* --- Controls Panel --- */
 .controls-panel {
-  width: 380px; /* Slightly wider */
+  width: clamp(320px, 40vw, 500px); /* Responsive: full 500px on wide, ~373px at 932px */
   background-color: var(--panel-bg);
   padding: 1.5rem;
   box-shadow: var(--shadow-md);
@@ -227,11 +227,40 @@ button.danger:hover {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 3rem;
+  padding: clamp(0.75rem, 2vw, 3rem);
   background-image: 
     radial-gradient(#e2e8f0 1px, transparent 1px);
   background-size: 24px 24px;
   position: relative;
+  min-width: 0; /* allow flex to shrink below content size */
+  overflow: hidden;
+}
+
+/* Full screen toggle button */
+.fullscreen-button {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  background-color: var(--panel-bg);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  opacity: 0.85;
+  transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.fullscreen-button:hover {
+  opacity: 1;
+  color: var(--text-color, #1e293b);
+  border-color: var(--primary-color, #3b82f6);
 }
 
 /* Shadow for the paper/canvas area */
