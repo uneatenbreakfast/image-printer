@@ -953,6 +953,7 @@ setActiveState(prev => ({
     try {
       const result = await driveRead();
       if (!result.saved || !result.data) {
+        setDriveStatus("idle");
         return { saved: false };
       }
 
@@ -1039,7 +1040,7 @@ setActiveState(prev => ({
       return (
         <div style={{ display: "flex", gap: "10px" }}>
           <div
-            onClick={() => setActiveEditor("top-left")}
+            onPointerDown={() => setActiveEditor("top-left")}
             className={
               activeEditor === "top-left"
                 ? "active-editor-wrapper"
@@ -1063,7 +1064,7 @@ setActiveState(prev => ({
             />
           </div>
           <div
-            onClick={() => setActiveEditor("top-right")}
+            onPointerDown={() => setActiveEditor("top-right")}
             className={
               activeEditor === "top-right"
                 ? "active-editor-wrapper"
@@ -1101,7 +1102,7 @@ setActiveState(prev => ({
           }}
         >
           <div
-            onClick={() => setActiveEditor("top-left")}
+            onPointerDown={() => setActiveEditor("top-left")}
             className={
               activeEditor === "top-left"
                 ? "active-editor-wrapper"
@@ -1125,7 +1126,7 @@ setActiveState(prev => ({
             />
           </div>
           <div
-            onClick={() => setActiveEditor("top-right")}
+            onPointerDown={() => setActiveEditor("top-right")}
             className={
               activeEditor === "top-right"
                 ? "active-editor-wrapper"
@@ -1149,7 +1150,7 @@ setActiveState(prev => ({
             />
           </div>
           <div
-            onClick={() => setActiveEditor("bottom-left")}
+            onPointerDown={() => setActiveEditor("bottom-left")}
             className={
               activeEditor === "bottom-left"
                 ? "active-editor-wrapper"
@@ -1173,7 +1174,7 @@ setActiveState(prev => ({
             />
           </div>
           <div
-            onClick={() => setActiveEditor("bottom-right")}
+            onPointerDown={() => setActiveEditor("bottom-right")}
             className={
               activeEditor === "bottom-right"
                 ? "active-editor-wrapper"
@@ -1211,7 +1212,7 @@ setActiveState(prev => ({
           }}
         >
           <div
-            onClick={() => setActiveEditor("top-left")}
+            onPointerDown={() => setActiveEditor("top-left")}
             className={
               activeEditor === "top-left"
                 ? "active-editor-wrapper"
@@ -1235,7 +1236,7 @@ setActiveState(prev => ({
             />
           </div>
           <div
-            onClick={() => setActiveEditor("top-right")}
+            onPointerDown={() => setActiveEditor("top-right")}
             className={
               activeEditor === "top-right"
                 ? "active-editor-wrapper"
@@ -1259,7 +1260,7 @@ setActiveState(prev => ({
             />
           </div>
           <div
-            onClick={() => setActiveEditor("bottom-left")}
+            onPointerDown={() => setActiveEditor("bottom-left")}
             className={
               activeEditor === "bottom-left"
                 ? "active-editor-wrapper"
@@ -1283,7 +1284,7 @@ setActiveState(prev => ({
             />
           </div>
           <div
-            onClick={() => setActiveEditor("bottom-right")}
+            onPointerDown={() => setActiveEditor("bottom-right")}
             className={
               activeEditor === "bottom-right"
                 ? "active-editor-wrapper"

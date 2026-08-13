@@ -202,11 +202,14 @@ const Editor: React.FC<EditorProps> = ({
                 width={imageDimensions.width}
                 height={imageDimensions.height}
                 draggable
+                dragDistance={5}
                 scaleX={scale}
                 scaleY={scale}
                 rotation={rotation}
                 offsetX={imageDimensions.width / 2}
                 offsetY={imageDimensions.height / 2}
+                onClick={onUploadClick}
+                onTap={onUploadClick}
               />
             )}
           </Group>
