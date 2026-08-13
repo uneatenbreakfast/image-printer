@@ -69,6 +69,16 @@ function pemToDer(pem: string): ArrayBuffer {
     .filter(l => !l.includes("BEGIN") && !l.includes("END"))
     .join("")
     .replace(/\s+/g, "");
+  // Strict base64 validation — a single stray char (e.g. an '&' from a mangled
+  // copy/paste) makes atob throw a cryptic "not correctly encoded" error.
+  const invalid = b64.replace(/[A-Za-z0-9+/=]/g, "");
+  if (invalid.length > 0) {
+    const chars = [...new Set(invalid)].join("");
+    throw new Error(
+      `Service account private key is corrupted: found invalid base64 character(s) "${chars}". ` +
+      `Re-download the service account JSON from Google Cloud Console (IAM → Service Accounts → Keys) and paste it again.`
+    );
+  }
   const binary = atob(b64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
