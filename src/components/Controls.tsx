@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import type { ChangeEvent } from 'react';
 import { SketchPicker } from 'react-color';
 import {
@@ -212,6 +212,22 @@ const Controls: React.FC<ControlsProps> = ({
   const [fileIdInput, setFileIdInput] = useState<string>(getDriveFileId());
   const [configMsg, setConfigMsg] = useState<string>('');
 
+  const saFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleServiceAccountFile = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (typeof e.target?.result === 'string') {
+        const r = setServiceAccount(e.target.result);
+        setConfigMsg(r.ok ? 'Saved service account' : `Error: ${r.error}`);
+      }
+      event.target.value = ''; // allow re-selecting the same file
+    };
+    reader.readAsText(file);
+  };
+
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const reader = new FileReader();
@@ -282,6 +298,19 @@ const Controls: React.FC<ControlsProps> = ({
                       Clear Key
                     </button>
                   </div>
+                  <button
+                    onClick={() => saFileInputRef.current?.click()}
+                    style={{ width: '100%' }}
+                  >
+                    Upload JSON file
+                  </button>
+                  <input
+                    ref={saFileInputRef}
+                    type="file"
+                    accept=".json,application/json,text/plain"
+                    onChange={handleServiceAccountFile}
+                    style={{ display: 'none' }}
+                  />
                   <label style={{ fontSize: '0.85em' }}>Drive File ID:</label>
                   <input
                     type="text"
